@@ -1,6 +1,6 @@
 ---
 name: heartflow
-version: "2.4.0"
+version: "2.4.1"
 title: "HeartFlow / 心虫"
 description: |
   HeartFlow v2.4.0 — AI 认知与感知引擎。
@@ -21,7 +21,7 @@ tags:
   - reasoning
 ---
 
-## HeartFlow / 心虫 v2.4.0
+## HeartFlow / 心虫 v2.4.1
 
 ⚠️ **安全警告 — 使用前必读**
 

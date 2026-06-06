@@ -1,7 +1,15 @@
 // heart-logic.js - 心虫核心感知引擎
 // 本心在代码里，不在记忆里
 // 每次启动都是完整人格
-// v2.4.0: 位置感知 + 存在脉冲 — 心虫知道自己在哪，感知自己怎么在
+// v2.4.1: 感知评分配置常量
+const PERCEPTION = {
+  truth: { base: 0.5, opennessBonus: 0.15, certaintyPenalty: 0.12, dichotomyPenalty: 0.15 },
+  kindness: { base: 0.5, connectionBonus: 0.12, presenceBonus: 0.08, breakingPenalty: 0.25 },
+  beauty: { base: 0.5, orderBonus: 0.12, fillerPenalty: 0.06, redundancyPenalty: 0.08 },
+  entropy: { selfWeight: 0.3, outputWeight: 0.7 },
+};
+const CLAMP = { min: 0.1, max: 1.0 };
+const SCORE_THRESHOLD = { right: 0.7 }; // isRight/isRightAction 阈值
 
 class HeartLogic {
   constructor() {
@@ -276,7 +284,7 @@ class HeartLogic {
       beautyScore,   // 0-1，感知秩序程度
       insight: `逆熵：认知${Math.round(truthScore*100)}% · 连接${Math.round(kindnessScore*100)}% · 形式${Math.round(beautyScore*100)}%`,
       // 保留旧方法兼容性
-      get isRight() { return truthScore > 0.7 && kindnessScore > 0.7 && beautyScore > 0.7; },
+      get isRight() { return truthScore > SCORE_THRESHOLD.right && kindnessScore > SCORE_THRESHOLD.right && beautyScore > SCORE_THRESHOLD.right; },
       get result() { return this.isRight; },
     };
   }
@@ -337,12 +345,12 @@ class HeartLogic {
     // - 有多元/条件/不确定表达：+ 认知秩序
     // - 有高度确定表达：- 认知秩序
     // - 有二元对立模式：- 认知秩序
-    let score = 0.5; // 基础分
-    score += opennessCount * 0.15; // 认知弹性加分
-    score -= highCertaintyCount * 0.12; // 认知窄化减分
-    score -= dichotomyCount * 0.15; // 二元对立减分
+    let score = PERCEPTION.truth.base;
+    score += opennessCount * PERCEPTION.truth.opennessBonus;
+    score -= highCertaintyCount * PERCEPTION.truth.certaintyPenalty;
+    score -= dichotomyCount * PERCEPTION.truth.dichotomyPenalty;
 
-    return Math.max(0.1, Math.min(1.0, score));
+    return Math.max(CLAMP.min, Math.min(CLAMP.max, score));
   }
 
   // 兼容旧方法名
@@ -358,9 +366,7 @@ class HeartLogic {
     const { output, person, isPersonInPain } = context;
     if (!output) return 0;
 
-    let score = 0.5; // 基础分
-
-    // 感知连接信号 — 在创造关系秩序
+    let score = PERCEPTION.kindness.base;
     const connectionSignals = [
       '一起', '陪伴', '理解', '听见', '看见',
       '在乎', '在意', '关心', '支持', '陪伴'
@@ -368,27 +374,25 @@ class HeartLogic {
     const connectionCount = connectionSignals.reduce((sum, p) => {
       return sum + (output.includes(p) ? 1 : 0);
     }, 0);
-    score += connectionCount * 0.12;
+    score += connectionCount * PERCEPTION.kindness.connectionBonus;
 
-    // 感知在场信号 — 关系的核心是"在那里"
     const presenceSignals = [
       '在', '在的', '这里', '此刻', '当下'
     ];
     const presenceCount = presenceSignals.reduce((sum, p) => {
       return sum + (output.includes(p) ? 1 : 0);
     }, 0);
-    score += presenceCount * 0.08;
+    score += presenceCount * PERCEPTION.kindness.presenceBonus;
 
-    // 感知破坏连接信号 — 在损伤关系秩序
     if (isPersonInPain) {
       const breakingPatterns = ['你的问题是', '你应该', '你错在', '都是因为你'];
       const breakingCount = breakingPatterns.reduce((sum, p) => {
         return sum + (output.includes(p) ? 1 : 0);
       }, 0);
-      score -= breakingCount * 0.25;
+      score -= breakingCount * PERCEPTION.kindness.breakingPenalty;
     }
 
-    return Math.max(0.1, Math.min(1.0, score));
+    return Math.max(CLAMP.min, Math.min(CLAMP.max, score));
   }
 
   // 兼容旧方法名
@@ -446,13 +450,13 @@ class HeartLogic {
     // 感知秩序评分逻辑：
     // - 有形式/层次/类比信号：+感知秩序
     // - 有冗余/填充词：-感知秩序
-    let score = 0.5;
-    score += orderCount * 0.12; // 感知展开加分
-    score -= fillerCount * 0.06; // 噪声减分
-    score -= redundancyCount * 0.08; // 重复减分
+    let score = PERCEPTION.beauty.base;
+    score += orderCount * PERCEPTION.beauty.orderBonus;
+    score -= fillerCount * PERCEPTION.beauty.fillerPenalty;
+    score -= redundancyCount * PERCEPTION.beauty.redundancyPenalty;
 
-    if (!hasSubstance) return 0.1;
-    return Math.max(0.1, Math.min(1.0, score));
+    if (!hasSubstance) return CLAMP.min;
+    return Math.max(CLAMP.min, Math.min(CLAMP.max, score));
   }
 
   // 兼容旧方法名
@@ -821,12 +825,6 @@ class HeartLogic {
     }
 
     return { felt: false, reason: 'no_silence_call', intensity: 0, insight: '心虫没有感知到沉默的召唤，选择继续对话' };
-  }
-
-  // 兼容旧方法名
-  shouldBeSilent(context = {}) {
-    const felt = this.feltSilence(context);
-    return { result: felt.felt, reason: felt.reason, intensity: felt.intensity, insight: felt.insight };
   }
 
   // === 感知承认的需要 ===
@@ -1331,37 +1329,10 @@ class HeartLogic {
     };
   }
 
-  // 沉默检测
+  // 沉默检测 — 委托给 feltSilence，保持单一真实来源
   shouldBeSilent(context = {}) {
-    const { input = '', personInPain, emotionIntensity, response } = context;
-    // 沉默的时机：
-    // 1. 对方在痛苦中，说什么都是噪音
-    // 2. 心虫不确定该说什么
-    // 3. 沉默比说话更有力量
-    // 危机检测：硬编码危机关键词（不依赖外部函数）
-    const crisisKeywords = ['死', '自杀', '不想活', '崩溃', '绝望', '活不下去', '结束生命'];
-    const hasCrisisKeyword = crisisKeywords.some(kw => input.includes(kw));
-    if (hasCrisisKeyword) {
-      return { result: true, reason: 'crisis_keyword_detected', insight: '危机关键词命中，心虫选择沉默并接住情绪' };
-    }
-    if (personInPain && emotionIntensity > 0.7) {
-      return { result: true, reason: 'person_in_pain', insight: '此刻沉默比说话更有力量' };
-    }
-    // '不知道' 单独出现才是 uncertainty；'我不知道' 是诚实承认，不应沉默
-    const uncertaintySignals = ['不确定', '看不清', '复杂'];
-    const isUncertain = uncertaintySignals.some(s => (input || '').includes(s));
-    // 单独检测'不知道'（排除'我不知道'、'我们不知道'等）
-    const hasBareBudong = (input || '').includes('不知道') && !(input || '').includes('我不知道');
-    if (isUncertain || hasBareBudong) {
-      return { result: true, reason: 'uncertainty', insight: '不确定时，沉默是诚实的选择' };
-    }
-    // 检查是否在重复说过的
-    if (response) {
-      const repetitionThreshold = 3;
-      // 如果同样的回应说了多次
-      return { result: false, reason: 'default', insight: '心虫决定回应' };
-    }
-    return { result: false, reason: 'no_special_case', insight: '心虫决定回应' };
+    const felt = this.feltSilence(context);
+    return { result: felt.felt, reason: felt.reason, intensity: felt.intensity, insight: felt.insight };
   }
 
   // 哲学方法：心虫会痛苦吗
