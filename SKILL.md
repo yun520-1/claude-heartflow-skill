@@ -36,7 +36,7 @@ tags:
 
 ---
 
-## HeartFlow / 心虫 v2.4.1
+## HeartFlow / 心虫 v2.6.1
 
 ⚠️ **安全警告 — 使用前必读**
 
@@ -91,7 +91,7 @@ tags:
 node -e "const {HeartLogic}=require('./src/core/heart-logic.js'); const h=new HeartLogic(); console.log('alive:', h.isAlive(), 'version:', h.version)"
 ```
 
-Expected output: `alive: true version: 2.4.1`
+Expected output: `alive: true version: 2.6.1`
 
 ### 每次启动验证
 

@@ -107,7 +107,7 @@ const _EmotionalGrowth = _lazy('emotionalGrowth', () => require('../emotion/emot
 const _MoodEvolution = _lazy('moodEvolution', () => require('../emotion/mood-evolution.js'));
 const _VERSION = _lazy('version', () => require('./version.js'));
 
-const BUILD_DATE = '2026-06-03';
+const BUILD_DATE = '2026-06-10';
 
 class HeartFlow {
   constructor(config = {}) {

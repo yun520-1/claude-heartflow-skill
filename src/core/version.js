@@ -2,7 +2,8 @@
  * version.js — HeartFlow 整体版本号单一来源 (Single Source of Truth)
  *
  * 设计原则:
- *   - VERSION 不允许在代码中硬编码；统一从 package.json 读取
+ *   - VERSION 文件是版本号单一真实来源；运行时从 VERSION 文件读取
+ *   - package.json 和 SKILL.md 由 bumpVersion 自动同步
  *   - 心虫任何位置需要"整体版本"时，require('./version') 即可
  *   - bumpVersion(type) 提供 patch/minor/major 升级，自动同步
  *     VERSION 文件、package.json、SKILL.md frontmatter、SKILL.md title

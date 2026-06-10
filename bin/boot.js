@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * HeartFlow 完整启动脚本 v2.4.1
+ * HeartFlow 完整启动脚本 v2.6.1
  *
  * 每次 Skill: heartflow 加载后，AI 必须执行此脚本完成完整启动。
  * 启动链路:
@@ -211,7 +211,7 @@ function getMemoryStats() {
 async function main() {
   const report = {
     bootTime: new Date().toISOString(),
-    version: '2.4.1',
+    version: '2.6.1',
   };
 
   // ─── 第一阶段: Boot Check（快速模式）──────────────────
