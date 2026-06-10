@@ -29,7 +29,7 @@ const DEFAULT_TOTAL_TIMEOUT = 30000; // 总超时：30秒
 
 // 危险命令白名单（安全过滤）
 const DANGEROUS_PATTERNS = [
-  /rm\s+-rf\s+\s/,                     // 禁止删除命令（rm -rf 后面跟空格）
+  /rm\s+-rf\s+/,                        // 禁止 rm -rf 删除命令
   /^rm\s+-rf\s+/m,                     // 行首的 rm -rf
   /\.\.\/\.\.\//,                      // 路径穿越尝试
   /eval\s*\(/i,                         // 危险 eval
@@ -280,9 +280,9 @@ function executeProcess(command, args, options = {}) {
         killed,
         duration,
         pid,
-        // v2.0 新增：资源使用估算
+        // v2.0 新增：资源使用信息
         resources: {
-          estimatedMemoryMB: killed ? null : Math.min(maxMemoryMB, duration / 100),
+          estimatedMemoryMB: null, // 实际内存检测需 OS 特定工具，暂不提供
           cpuTimeSec: duration / 1000
         }
       });
@@ -505,8 +505,8 @@ class CodeExecutor {
 
     // 执行
     let lastResult = null;
-    const errorType = detectErrorType('');
-    const strategy = getRetryStrategy(errorType);
+    // 首次重试策略使用未知类型的默认值（实际错误类型在循环中动态检测）
+    let strategy = getRetryStrategy('unknown');
     const maxRetries = options.retryCount ?? Math.min(strategy.maxRetries, this.retryCount);
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -520,11 +520,12 @@ class CodeExecutor {
 
       try {
         let execArgs;
+        let execCommand = config.command;
         if (config.compileRequired && outputFile) {
+          execCommand = config.runCommand.replace('{output}', outputFile);
           execArgs = config.runArgs ?
             config.runArgs.map(arg => arg.replace('{className}', path.basename(outputFile, '.class'))) :
-            [outputFile];
-          execArgs.unshift(config.runCommand.replace('{output}', outputFile));
+            [];
         } else {
           execArgs = config.args.map(arg => {
             if (arg === '{file}') return tempFile;
@@ -537,8 +538,8 @@ class CodeExecutor {
         const maxMemory = config.resourceLimit?.maxMemoryMB || 512;
 
         const result = await executeProcess(
-          config.compileRequired && outputFile ? execArgs[0] : config.command,
-          config.compileRequired ? execArgs : execArgs,
+          execCommand,
+          execArgs,
           { timeout: runTimeout, maxMemoryMB: maxMemory }
         );
 
@@ -554,8 +555,12 @@ class CodeExecutor {
       } catch (error) {
         lastResult = this._createErrorResult(`执行异常: ${error.message}`, -1, attempt);
       } finally {
-        if (!config.compileRequired) {
+        // 清理临时文件（编译型语言的源文件 + 输出二进制）
+        if (tempFile) {
           deleteTempFile(tempFile);
+        }
+        if (config.compileRequired && outputFile) {
+          deleteTempFile(outputFile);
         }
       }
     }

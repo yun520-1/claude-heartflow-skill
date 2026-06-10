@@ -8,7 +8,7 @@
  *   - memory.js 的 atomicWriteJson 原子写入
  *
  * @author HeartFlow
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 const fs = require('fs');
@@ -1158,14 +1158,12 @@ async function concurrentLimit(tasks, limit = 5) {
     const promise = Promise.resolve().then(() => task());
     results.push(promise);
 
-    if (tasks.length >= limit) {
-      const cleanup = () => executing.delete(promise);
-      promise.then(cleanup).catch(cleanup);
-      executing.add(promise);
+    const cleanup = () => executing.delete(promise);
+    promise.then(cleanup).catch(cleanup);
+    executing.add(promise);
 
-      if (executing.size >= limit) {
-        await Promise.race(executing);
-      }
+    if (executing.size >= limit) {
+      await Promise.race(executing);
     }
   }
 
@@ -1481,25 +1479,35 @@ class CodeKnowledge {
 
   // 加载数据
   _load() {
+    fs.mkdirSync(this.dataDir, { recursive: true });
+    // 逐个加载文件，单个文件失败不影响其他数据
     try {
-      fs.mkdirSync(this.dataDir, { recursive: true });
       if (fs.existsSync(this.snippetsFile)) {
         this.snippets = JSON.parse(fs.readFileSync(this.snippetsFile, 'utf8'));
       }
+    } catch (e) {
+      console.warn('[CodeKnowledge] 加载 snippets 失败:', e.message);
+    }
+    try {
       if (fs.existsSync(this.indexFile)) {
         this.index = JSON.parse(fs.readFileSync(this.indexFile, 'utf8'));
       }
+    } catch (e) {
+      console.warn('[CodeKnowledge] 加载 index 失败:', e.message);
+    }
+    try {
       if (fs.existsSync(this.failedPatternsFile)) {
         this.failedPatterns = JSON.parse(fs.readFileSync(this.failedPatternsFile, 'utf8'));
       }
+    } catch (e) {
+      console.warn('[CodeKnowledge] 加载失败模式失败:', e.message);
+    }
+    try {
       if (fs.existsSync(this.taskAssociationsFile)) {
         this.taskAssociations = JSON.parse(fs.readFileSync(this.taskAssociationsFile, 'utf8'));
       }
     } catch (e) {
-      this.snippets = [];
-      this.index = null;
-      this.failedPatterns = [];
-      this.taskAssociations = {};
+      console.warn('[CodeKnowledge] 加载任务关联失败:', e.message);
     }
   }
 
@@ -1758,11 +1766,6 @@ class CodeKnowledge {
       nested++;
       maxNested = Math.max(maxNested, nested);
     }
-    nestedPattern.lastIndex = 0;
-    nested = 0;
-    while ((match = nestedPattern.exec(code)) !== null) {
-      nested++;
-    }
 
     const hasRecursion = recursionPattern.test(code);
     return {
@@ -1779,7 +1782,10 @@ class CodeKnowledge {
   _extractFrameworkName(code, pattern) {
     const match = code.match(pattern);
     if (match) {
-      if (match[1]) return match[1];  // 捕获组可能是框架名
+      // 遍历所有捕获组，返回第一个匹配的（兼容多捕获组模式）
+      for (let i = 1; i < match.length; i++) {
+        if (match[i]) return match[i];
+      }
       return match[0].split('/').pop().replace(/['"]/g, '');
     }
     return null;
@@ -1980,7 +1986,27 @@ class CodeKnowledge {
   }
 
   // 获取模式列表
-  getPatterns({ language, category, tier } = {}) {
+  // 支持两种调用方式：
+  //   - getPatterns({ language, category, tier }) —— 对象过滤，返回 { patterns, count, ... }
+  //   - getPatterns(nameString) —— 按名称搜索，返回匹配的模式数组
+  getPatterns(filter) {
+    // 字符串参数 → 按名称搜索（返回数组，兼容 code-planner 调用）
+    if (typeof filter === 'string') {
+      const name = filter.toLowerCase();
+      // 同时在 snippets（用户添加）和 BUILTIN_PATTERNS（内置）中搜索
+      const results = [
+        ...this.snippets.filter(s =>
+          s.name && s.name.toLowerCase().includes(name)
+        ),
+        ...BUILTIN_PATTERNS.filter(p =>
+          p.name && p.name.toLowerCase().includes(name)
+        )
+      ];
+      return results;
+    }
+
+    // 对象参数 → 按 language/category/tier 过滤（返回原始对象格式）
+    const { language, category, tier } = filter || {};
     let list = this.snippets;
     if (language) list = list.filter(s => s.language === language);
     if (category) list = list.filter(s => s.category === category);

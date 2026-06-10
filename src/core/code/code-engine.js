@@ -1096,7 +1096,7 @@ class CodeEngine {
 
       // 除零风险
       const divMatch = line.match(/\/(\s*\w+\s*)/);
-      if (divMatch && !line.includes('/') && !line.includes('//') && !line.includes('/*')) {
+      if (divMatch && !line.trimStart().startsWith('//') && !line.includes('/*')) {
         const divisor = divMatch[1].trim();
         if (/^[a-zA-Z_$]/.test(divisor) && !['0', '1', '2'].includes(divisor)) {
           issues.push({
@@ -2637,14 +2637,16 @@ class CodeEngine {
    * @private
    */
   _fixGlobalStateDependency(code) {
-    const match = code.match(/(\w+)\.[a-zA-Z_$]+/);
+    const match = code.match(/(\w+)\.([a-zA-Z_$]\w*)/);
     if (match) {
       const globalObj = match[1];
-      const fixedCode = code.replace(globalObj, '/* 依赖注入 */');
+      const property = match[2];
+      // 仅替换第一个全局属性访问，保持语法完整
+      const fixedCode = code.replace(`${globalObj}.${property}`, `deps.${property} /* 原: ${globalObj}.${property} */`);
       return {
         originalCode: code,
         fixedCode,
-        explanation: `将对 ${globalObj} 的全局依赖改为依赖注入方式，提高可测试性`,
+        explanation: `将对 ${globalObj}.${property} 的全局依赖改为依赖注入方式（deps.${property}），提高可测试性`,
         type: 'dependency-injection',
         confidence: 0.6
       };
@@ -2864,24 +2866,27 @@ class CodeEngine {
   _checkPerformanceIssues(cleanCode, lang, issues) {
     const lines = getLines(cleanCode);
 
-    // 1. 嵌套循环 O(n²) 检测
-    let loopDepth = 0;
-    let loopLines = [];
+    // 1. 嵌套循环 O(n²) 检测（基于花括号深度追踪真实嵌套）
+    let depthMap = new Map(); // lineNum -> nestingDepth
+    let curDepth = 0;
+    let loopDepths = []; // { line, depth }
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      curDepth += (line.match(/\{/g) || []).length;
+      curDepth -= (line.match(/\}/g) || []).length;
       if (/\b(for|while)\s*\(/.test(line)) {
-        loopDepth++;
-        loopLines.push(i + 1);
+        loopDepths.push({ line: i + 1, depth: curDepth - (line.includes('{') ? 1 : 0) });
       }
     }
-    if (loopDepth >= 2) {
+    const nestedLoops = loopDepths.filter(l => l.depth > 0);
+    if (nestedLoops.length > 0) {
       issues.push({
         type: 'nested-loop',
         severity: 'medium',
-        line: loopLines[0],
-        code: lines[loopLines[0] - 1].trim(),
-        message: '嵌套循环可能导致 O(n²) 复杂度',
-        detail: `检测到 ${loopDepth} 层循环嵌套，当数据量大时性能显著下降`,
+        line: nestedLoops[0].line,
+        code: lines[nestedLoops[0].line - 1].trim(),
+        message: `嵌套循环可能导致 O(n²) 复杂度（${nestedLoops.length} 处嵌套）`,
+        detail: `检测到 ${loopDepths.length} 处循环，其中 ${nestedLoops.length} 处位于其他循环内部`,
         suggestion: '考虑使用 Map/Set 索引、提前退出或分治策略优化'
       });
     }

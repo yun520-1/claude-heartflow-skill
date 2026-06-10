@@ -1,5 +1,5 @@
 /**
- * HeartFlow CodeGenerator v1.0.0
+ * HeartFlow CodeGenerator v2.0.0
  *
  * 代码生成引擎 - 心虫核心模块
  *
@@ -485,8 +485,181 @@ class FileOps {
   }
 }
 
-module.exports = { FileOps };`,
+module.exports = { FileOps };\`,`,
         confidence: 0.9
+      }
+    },
+    cli: {
+      'commander-cli': {
+        name: 'Commander CLI 工具',
+        description: '使用 commander 构建 CLI 工具',
+        code: `#!/usr/bin/env node
+/**
+ * CLI 工具 - 使用 Commander.js
+ */
+const { Command } = require('commander');
+const program = new Command();
+
+program
+  .name('my-cli')
+  .description('CLI 工具说明')
+  .version('1.0.0');
+
+program
+  .command('init')
+  .description('初始化项目')
+  .option('-f, --force', '强制覆盖已有文件')
+  .action((options) => {
+    console.log('初始化项目...');
+    if (options.force) console.log('强制模式已启用');
+  });
+
+program
+  .command('build [target]')
+  .description('构建项目')
+  .option('-o, --output <dir>', '输出目录')
+  .action((target, options) => {
+    console.log(\`构建目标: \${target || 'default'}\`);
+    console.log(\`输出目录: \${options.output || './dist'}\`);
+  });
+
+program
+  .command('deploy <env>')
+  .description('部署到指定环境')
+  .option('--dry-run', '仅模拟不实际执行')
+  .action((env, options) => {
+    console.log(\`部署到: \${env}\`);
+    if (options.dryRun) {
+      console.log('[DRY-RUN] 仅模拟执行');
+      return;
+    }
+  });
+
+program.parse(process.argv);`,
+        confidence: 0.9
+      },
+      'simple-cli': {
+        name: '简单 CLI 工具',
+        description: '不依赖外部库的轻量 CLI',
+        code: `#!/usr/bin/env node
+/**
+ * 轻量 CLI 工具 - 无外部依赖
+ */
+const commands = {
+  help() {
+    console.log(\`用法: node \${require('path').basename(process.argv[1])} <命令> [选项]
+
+命令:
+  init        初始化项目
+  build       构建项目
+  deploy      部署项目
+  help        显示帮助信息\`);
+  },
+  init() { console.log('初始化项目...'); },
+  build() { console.log('构建项目...'); },
+  deploy(env) { console.log(\`部署到: \${env || 'production'}...\`); },
+};
+
+const cmd = process.argv[2];
+const arg = process.argv[3];
+
+if (commands[cmd]) commands[cmd](arg);
+else { console.error(\`未知命令: \${cmd}\`); commands.help(); process.exit(1); }`,
+        confidence: 0.85
+      }
+    },
+    database: {
+      'sqlite-query': {
+        name: 'SQLite 查询',
+        description: 'SQLite 数据库操作',
+        code: `/**
+ * SQLite 数据库操作
+ */
+const sqlite3 = require('better-sqlite3');
+
+class Database {
+  constructor(dbPath) {
+    this.db = new sqlite3(dbPath);
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('foreign_keys = ON');
+  }
+
+  migrate() {
+    this.db.exec(\`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    \`);
+  }
+
+  createUser(name, email) {
+    const stmt = this.db.prepare('INSERT INTO users (name, email) VALUES (?, ?)');
+    const result = stmt.run(name, email);
+    return result.lastInsertRowid;
+  }
+
+  getUserWithPosts(userId) {
+    const user = this.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) return null;
+    user.posts = this.db.prepare(
+      'SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC'
+    ).all(userId);
+    return user;
+  }
+
+  close() { this.db.close(); }
+}
+
+// 示例
+const db = new Database('./app.db');
+db.migrate();
+const userId = db.createUser('Alice', 'alice@example.com');
+console.log('用户信息:', db.getUserWithPosts(userId));
+db.close();`,
+        confidence: 0.85
+      },
+      'mongoose-model': {
+        name: 'Mongoose 模型',
+        description: 'MongoDB Mongoose 模型',
+        code: `/**
+ * Mongoose 数据模型
+ */
+const mongoose = require('mongoose');
+
+async function connectDB(uri) {
+  try {
+    await mongoose.connect(uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/myapp');
+    console.log('数据库连接成功');
+  } catch (err) {
+    console.error('数据库连接失败:', err.message);
+    process.exit(1);
+  }
+}
+
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  age: { type: Number, min: 0, max: 150 },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+}, { timestamps: true });
+
+userSchema.index({ email: 1 });
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = { connectDB, User };`,
+        confidence: 0.85
       }
     }
   },
@@ -701,6 +874,96 @@ export class FileOps {
   }
 }`,
         confidence: 0.9
+      }
+    },
+    cli: {
+      'yargs-cli': {
+        name: 'Yargs CLI 工具',
+        description: '使用 yargs 构建 TypeScript CLI 工具',
+        code: `#!/usr/bin/env node
+/**
+ * CLI 工具 - TypeScript + yargs
+ */
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+
+interface InitOptions { force?: boolean }
+interface BuildOptions { output?: string }
+interface DeployOptions { dryRun?: boolean }
+
+yargs(hideBin(process.argv))
+  .scriptName('my-cli')
+  .usage('$0 <cmd> [选项]')
+  .command('init', '初始化项目', (yargs) => {
+    yargs.option('force', { type: 'boolean', describe: '强制覆盖已有文件' });
+  }, (argv: InitOptions) => {
+    console.log('初始化项目...');
+    if (argv.force) console.log('强制模式已启用');
+  })
+  .command('build [target]', '构建项目', (yargs) => {
+    yargs.positional('target', { type: 'string', describe: '构建目标' });
+    yargs.option('output', { type: 'string', describe: '输出目录' });
+  }, (argv: BuildOptions & { target?: string }) => {
+    console.log(\`构建目标: \${argv.target || 'default'}\`);
+  })
+  .command('deploy <env>', '部署到指定环境', (yargs) => {
+    yargs.positional('env', { type: 'string', describe: '环境名称' });
+    yargs.option('dry-run', { type: 'boolean', describe: '仅模拟' });
+  }, (argv: DeployOptions & { env: string }) => {
+    console.log(\`部署到: \${argv.env}\`);
+  })
+  .demandCommand(1, '请指定命令')
+  .strict()
+  .parse();`,
+        confidence: 0.9
+      }
+    },
+    database: {
+      'typeorm-model': {
+        name: 'TypeORM 模型',
+        description: 'TypeORM 实体和数据库连接',
+        code: `/**
+ * TypeORM 数据模型
+ */
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ length: 100 })
+  name!: string;
+
+  @Column({ unique: true })
+  email!: string;
+
+  @Column({ default: 'user' })
+  role!: string;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+}
+
+@Entity('posts')
+export class Post {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  title!: string;
+
+  @Column('text', { nullable: true })
+  content!: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  author!: User;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+}`,
+        confidence: 0.85
       }
     }
   },
@@ -942,6 +1205,156 @@ class FileOps:
         return [str(p) for p in Path(directory).glob(pattern)]`,
         confidence: 0.9
       }
+    },
+    cli: {
+      'argparse-cli': {
+        name: 'Argparse CLI 工具',
+        description: '使用 argparse 构建 Python CLI',
+        code: `"""
+CLI 工具 - 使用 argparse
+"""
+import argparse
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(description="CLI 工具说明")
+    parser.add_argument("--version", action="version", version="1.0.0")
+
+    subparsers = parser.add_subparsers(dest="command", help="可用命令")
+
+    init_p = subparsers.add_parser("init", help="初始化项目")
+    init_p.add_argument("-f", "--force", action="store_true", help="强制覆盖")
+
+    build_p = subparsers.add_parser("build", help="构建项目")
+    build_p.add_argument("target", nargs="?", default="default")
+    build_p.add_argument("-o", "--output", default="./dist")
+
+    deploy_p = subparsers.add_parser("deploy", help="部署项目")
+    deploy_p.add_argument("env", help="目标环境")
+    deploy_p.add_argument("--dry-run", action="store_true", help="仅模拟")
+
+    args = parser.parse_args()
+
+    if args.command == "init":
+        print("初始化项目...")
+    elif args.command == "build":
+        print(f"构建目标: {args.target}")
+    elif args.command == "deploy":
+        print(f"部署到: {args.env}")
+        if args.dry_run:
+            print("[DRY-RUN] 仅模拟执行")
+    else:
+        parser.print_help()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()`,
+        confidence: 0.9
+      },
+      'click-cli': {
+        name: 'Click CLI 工具',
+        description: '使用 click 构建 Python CLI',
+        code: `"""
+CLI 工具 - 使用 click
+"""
+import click
+
+
+@click.group()
+def cli():
+    """CLI 工具说明"""
+    pass
+
+
+@cli.command()
+@click.option("-f", "--force", is_flag=True, help="强制覆盖已有文件")
+def init(force):
+    """初始化项目"""
+    click.echo("初始化项目...")
+
+
+@cli.command()
+@click.argument("target", required=False, default="default")
+@click.option("-o", "--output", default="./dist", help="输出目录")
+def build(target, output):
+    """构建项目"""
+    click.echo(f"构建目标: {target}")
+
+
+@cli.command()
+@click.argument("env")
+@click.option("--dry-run", is_flag=True, help="仅模拟不实际执行")
+def deploy(env, dry_run):
+    """部署到指定环境"""
+    click.echo(f"部署到: {env}")
+    if dry_run:
+        click.echo("[DRY-RUN] 仅模拟执行")
+
+
+if __name__ == "__main__":
+    cli()`,
+        confidence: 0.9
+      }
+    },
+    database: {
+      'sqlalchemy-model': {
+        name: 'SQLAlchemy 模型',
+        description: 'SQLAlchemy ORM 数据库模型',
+        code: `"""
+SQLAlchemy 数据模型
+"""
+from sqlalchemy import (
+    create_engine, Column, Integer, String, DateTime,
+    ForeignKey, Text, Boolean,
+)
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from datetime import datetime
+
+Base = declarative_base()
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(255), unique=True, nullable=False)
+    role = Column(String(20), default="user")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    posts = relationship("Post", back_populates="author")
+
+
+class Post(Base):
+    __tablename__ = "posts"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    published = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    author = relationship("User", back_populates="posts")
+
+
+def get_session(database_url: str = "sqlite:///app.db"):
+    engine = create_engine(database_url, echo=False)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    return Session()
+
+
+if __name__ == "__main__":
+    session = get_session()
+    user = User(name="Alice", email="alice@example.com")
+    session.add(user)
+    session.commit()
+    print(f"创建用户: {user.id}")`,
+        confidence: 0.85
+      }
     }
   },
 
@@ -977,6 +1390,124 @@ class FileOps:
         description: '监控文件变化并执行命令',
         code: '#!/bin/bash\nFILE="$1"; CMD="$2"; LAST=""\nwhile true; do CUR=$(md5sum "$FILE" 2>/dev/null | awk "{print $1}"); [ "$CUR" != "$LAST" ] && { echo "[WATCH] $FILE changed"; eval "$CMD"; LAST="$CUR"; }; sleep 2; done',
         confidence: 0.8
+      }
+    },
+    cli: {
+      'advanced-cli': {
+        name: '高级 CLI 脚本',
+        description: '带子命令和选项的 Bash CLI 工具',
+        code: `#!/bin/bash
+set -euo pipefail
+VERSION="1.0.0"
+
+# ─── 颜色输出 ──────────────────────────────────────
+RED='\\033[0;31m'; GREEN='\\033[0;32m'; YELLOW='\\033[1;33m'; NC='\\033[0m'
+info()  { echo -e "${GREEN}[INFO]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+# ─── 命令函数 ──────────────────────────────────────
+cmd_init() {
+  local force=false
+  [[ "$1" == "-f" || "$1" == "--force" ]] && force=true
+  info "初始化项目..."; $force && info "强制模式已启用"
+}
+
+cmd_build() {
+  local target="\${1:-default}" output="\${2:-./dist}"
+  info "构建目标: $target"; info "输出目录: $output"
+}
+
+cmd_deploy() {
+  local env="$1"; shift
+  local dry_run=false
+  [[ "$1" == "--dry-run" ]] && dry_run=true
+  info "部署到: $env"
+  $dry_run && { warn "[DRY-RUN] 仅模拟执行"; return; }
+}
+
+# ─── 主入口 ────────────────────────────────────────
+main() {
+  [[ $# -eq 0 ]] && { echo "用法: $0 <命令> [选项]"; exit 1; }
+  local cmd="$1"; shift
+  case "$cmd" in
+    init)   cmd_init "$@" ;;
+    build)  cmd_build "$@" ;;
+    deploy) cmd_deploy "$@" ;;
+    help|--help|-h)
+      echo "用法: $0 {init|build|deploy} [选项]";;
+    *) error "未知命令: $cmd"; exit 1 ;;
+  esac
+}
+
+main "$@"`,
+        confidence: 0.85
+      }
+    },
+    database: {
+      'db-backup': {
+        name: '数据库备份脚本',
+        description: 'MySQL/PostgreSQL 数据库备份',
+        code: `#!/bin/bash
+# 数据库备份脚本
+set -euo pipefail
+
+# ─── 配置 ──────────────────────────────────────────
+DB_TYPE="\${DB_TYPE:-mysql}"            # mysql | postgres
+DB_HOST="\${DB_HOST:-localhost}"
+DB_PORT="\${DB_PORT:-3306}"
+DB_NAME="\${DB_NAME:-myapp}"
+DB_USER="\${DB_USER:-root}"
+DB_PASS="\${DB_PASS:-}"
+BACKUP_DIR="\${BACKUP_DIR:-./backups}"
+RETENTION_DAYS=7
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# ─── 创建备份目录 ─────────────────────────────────
+mkdir -p "$BACKUP_DIR"
+
+# ─── 执行备份 ─────────────────────────────────────
+backup_mysql() {
+  local file="$BACKUP_DIR/${DB_NAME}_$TIMESTAMP.sql.gz"
+  info "备份 MySQL 数据库: $DB_NAME"
+  mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" \\
+    \${DB_PASS:+-p"$DB_PASS"} "$DB_NAME" | gzip > "$file"
+  info "备份完成: $file"
+}
+
+backup_postgres() {
+  local file="$BACKUP_DIR/${DB_NAME}_$TIMESTAMP.sql.gz"
+  info "备份 PostgreSQL 数据库: $DB_NAME"
+  PGPASSWORD="$DB_PASS" pg_dump -h "$DB_HOST" -p "$DB_PORT" \\
+    -U "$DB_USER" "$DB_NAME" | gzip > "$file"
+  info "备份完成: $file"
+}
+
+# ─── 清理旧备份 ───────────────────────────────────
+cleanup_old() {
+  info "清理 ${RETENTION_DAYS} 天前的备份..."
+  find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz" -mtime +$RETENTION_DAYS -delete
+}
+
+# ─── 主流程 ───────────────────────────────────────
+main() {
+  echo "====== 数据库备份 ======"
+  echo "类型: $DB_TYPE | 主机: $DB_HOST | 数据库: $DB_NAME"
+  echo "备份目录: $BACKUP_DIR"
+  echo "========================="
+
+  case "$DB_TYPE" in
+    mysql)    backup_mysql ;;
+    postgres) backup_postgres ;;
+    *)        error "不支持的数据库类型: $DB_TYPE"; exit 1 ;;
+  esac
+
+  cleanup_old
+  info "备份流程完成"
+}
+
+main "$@"`,
+        confidence: 0.85
       }
     }
   },
@@ -1268,6 +1799,144 @@ func main() {
 	DeleteFile("test.txt")
 }`,
         confidence: 0.9
+      }
+    },
+    cli: {
+      'cobra-cli': {
+        name: 'Cobra CLI 工具',
+        description: '使用 cobra 构建 Go CLI 工具',
+        code: `// CLI 工具 - Cobra 框架
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "my-cli",
+	Short: "CLI 工具说明",
+}
+
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "初始化项目",
+	Run: func(cmd *cobra.Command, args []string) {
+		force, _ := cmd.Flags().GetBool("force")
+		fmt.Println("初始化项目...")
+		if force {
+			fmt.Println("强制模式已启用")
+		}
+	},
+}
+
+var buildCmd = &cobra.Command{
+	Use:   "build [target]",
+	Short: "构建项目",
+	Run: func(cmd *cobra.Command, args []string) {
+		target := "default"
+		if len(args) > 0 {
+			target = args[0]
+		}
+		output, _ := cmd.Flags().GetString("output")
+		fmt.Printf("构建目标: %s\\n", target)
+		fmt.Printf("输出目录: %s\\n", output)
+	},
+}
+
+var deployCmd = &cobra.Command{
+	Use:   "deploy <env>",
+	Short: "部署到指定环境",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			fmt.Println("请指定环境")
+			os.Exit(1)
+		}
+		env := args[0]
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		fmt.Printf("部署到: %s\\n", env)
+		if dryRun {
+			fmt.Println("[DRY-RUN] 仅模拟执行")
+			return
+		}
+	},
+}
+
+func init() {
+	initCmd.Flags().BoolP("force", "f", false, "强制覆盖已有文件")
+	buildCmd.Flags().StringP("output", "o", "./dist", "输出目录")
+	deployCmd.Flags().Bool("dry-run", false, "仅模拟不实际执行")
+
+	rootCmd.AddCommand(initCmd, buildCmd, deployCmd)
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}`,
+        confidence: 0.9
+      }
+    },
+    database: {
+      'gorm-model': {
+        name: 'GORM 模型',
+        description: 'Go GORM ORM 数据模型',
+        code: `// GORM 数据模型
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+// User 用户模型
+type User struct {
+	ID        uint      \`gorm:"primaryKey"\`
+	Name      string    \`gorm:"size:100;not null"\`
+	Email     string    \`gorm:"uniqueIndex;not null"\`
+	Role      string    \`gorm:"default:user"\`
+	CreatedAt time.Time
+	Posts     []Post \`gorm:"foreignKey:UserID"\`
+}
+
+// Post 文章模型
+type Post struct {
+	ID        uint   \`gorm:"primaryKey"\`
+	Title     string \`gorm:"not null"\`
+	Content   string \`gorm:"type:text"\`
+	UserID    uint
+	Published bool \`gorm:"default:false"\`
+	CreatedAt time.Time
+}
+
+func main() {
+	// 连接数据库
+	db, err := gorm.Open(sqlite.Open("app.db"), &gorm.Config{})
+	if err != nil {
+		panic("数据库连接失败: " + err.Error())
+	}
+
+	// 自动迁移
+	db.AutoMigrate(&User{}, &Post{})
+
+	// 创建用户
+	user := User{Name: "Alice", Email: "alice@example.com"}
+	db.Create(&user)
+	fmt.Printf("创建用户: %d\\n", user.ID)
+
+	// 查询用户（含文章）
+	var userWithPosts User
+	db.Preload("Posts").First(&userWithPosts, user.ID)
+	fmt.Printf("用户: %s, 文章数: %d\\n", userWithPosts.Name, len(userWithPosts.Posts))
+}`,
+        confidence: 0.85
       }
     }
   },
@@ -1575,6 +2244,170 @@ fn main() {
 }`,
         confidence: 0.9
       }
+    },
+    cli: {
+      'clap-cli': {
+        name: 'CLI 工具',
+        description: '基于 clap 的命令行工具',
+        code: `// 命令行工具（使用 clap 4.x）
+// 功能：支持 init/build/deploy 三个子命令
+//
+// 依赖（Cargo.toml）:
+// [dependencies]
+// clap = { version = "4", features = ["derive"] }
+
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(name = "myapp")]
+#[command(about = "一个强大的 CLI 工具", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// 初始化项目
+    Init {
+        /// 项目名称
+        name: String,
+
+        /// 项目路径
+        #[arg(short, long, default_value = ".")]
+        path: String,
+    },
+    /// 构建项目
+    Build {
+        /// 发布模式
+        #[arg(short, long)]
+        release: bool,
+    },
+    /// 部署到环境
+    Deploy {
+        /// 目标环境
+        #[arg(short, long)]
+        env: String,
+    },
+}
+
+fn cmd_init(name: &str, path: &str) {
+    println!("初始化项目: {} 在路径: {}", name, path);
+}
+
+fn cmd_build(release: bool) {
+    if release {
+        println!("发布模式构建...");
+    } else {
+        println!("调试模式构建...");
+    }
+}
+
+fn cmd_deploy(env: &str) {
+    println!("部署到 {} 环境...", env);
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    match &cli.command {
+        Commands::Init { name, path } => cmd_init(name, path),
+        Commands::Build { release } => cmd_build(*release),
+        Commands::Deploy { env } => cmd_deploy(env),
+    }
+}`,
+        confidence: 0.9
+      }
+    },
+    database: {
+      'diesel-model': {
+        name: '数据库模型',
+        description: 'Diesel ORM 数据模型',
+        code: `// Diesel ORM 数据模型
+//
+// 依赖（Cargo.toml）:
+// [dependencies]
+// diesel = { version = "2", features = ["postgres", "r2d2"] }
+// dotenvy = "0.15"
+//
+// 使用 diesel CLI 初始化:
+// diesel setup
+// diesel migration generate create_users
+// diesel migration run
+
+use chrono::NaiveDateTime;
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+// 表名: users
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Selectable)]
+#[diesel(table_name = crate::schema::users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct User {
+    pub id: i32,
+    pub name: String,
+    pub email: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
+
+// 创建用户 DTO
+#[derive(Debug, Insertable)]
+#[diesel(table_name = crate::schema::users)]
+pub struct NewUser {
+    pub name: String,
+    pub email: String,
+}
+
+impl User {
+    /// 创建新用户
+    pub fn create(conn: &mut PgConnection, new_user: &NewUser) -> QueryResult<User> {
+        diesel::insert_into(crate::schema::users::table)
+            .values(new_user)
+            .get_result(conn)
+    }
+
+    /// 获取所有用户
+    pub fn get_all(conn: &mut PgConnection) -> QueryResult<Vec<User>> {
+        crate::schema::users::table
+            .order(crate::schema::users::id.desc())
+            .load::<User>(conn)
+    }
+
+    /// 根据 ID 获取用户
+    pub fn get_by_id(conn: &mut PgConnection, user_id: i32) -> QueryResult<User> {
+        crate::schema::users::table
+            .find(user_id)
+            .get_result::<User>(conn)
+    }
+
+    /// 更新用户名
+    pub fn update_name(conn: &mut PgConnection, user_id: i32, new_name: &str) -> QueryResult<User> {
+        diesel::update(crate::schema::users::table.find(user_id))
+            .set(crate::schema::users::name.eq(new_name))
+            .get_result(conn)
+    }
+
+    /// 删除用户
+    pub fn delete(conn: &mut PgConnection, user_id: i32) -> QueryResult<usize> {
+        diesel::delete(crate::schema::users::table.find(user_id))
+            .execute(conn)
+    }
+}
+
+// 连接池管理
+use diesel::r2d2::{self, ConnectionManager};
+
+pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
+
+pub fn create_pool(database_url: &str) -> DbPool {
+    let manager = ConnectionManager::<PgConnection>::new(database_url);
+    r2d2::Pool::builder()
+        .build(manager)
+        .expect("无法创建数据库连接池")
+}`,
+        confidence: 0.9
+      }
     }
   }
 };
@@ -1607,19 +2440,19 @@ const LANGUAGE_PATTERNS = {
   go: {
     keywords: ['golang', 'go', 'gin', 'goroutine'],
     extensions: ['.go'],
-    patterns: ['package\\s+\w+', 'func\\s+\\w+', 'import\\s*\\(', 'go\\s+\\w+', ':=']
+    patterns: ['package\\s+\\w+', 'func\\s+\\w+', 'import\\s*\\(', 'go\\s+\\w+', ':=']
   },
   rust: {
     keywords: ['rust', 'cargo', 'rustc', 'wasm'],
     extensions: ['.rs'],
-    patterns: ['fn\\s+\\w+', 'let\\s+mut', 'impl\\s+\w+', 'pub\\s+(fn|struct|enum)', 'use\\s+\\w+']
+    patterns: ['fn\\s+\\w+', 'let\\s+mut', 'impl\\s+\\w+', 'pub\\s+(fn|struct|enum)', 'use\\s+\\w+']
   }
 };
 
 const INTENT_PATTERNS = {
-  algorithm: ['排序', '查找', '搜索', 'sort', 'search', 'sort', 'binary', 'quick', 'merge', 'bfs', 'dfs'],
+  algorithm: ['排序', '查找', '搜索', 'sort', 'search', 'binary', 'quick', 'merge', 'bfs', 'dfs'],
   structure: ['类', '结构', '链表', '树', 'class', 'struct', 'list', 'tree', 'linked', 'array'],
-  network: ['服务器', 'http', 'api', '请求', 'server', 'request', 'fetch', 'api', 'rest', 'endpoint'],
+  network: ['服务器', 'http', 'api', '请求', 'server', 'request', 'fetch', 'rest', 'endpoint'],
   io: ['文件', '读写', 'io', 'file', 'read', 'write', 'stream', 'buffer'],
   cli: ['命令行', 'cli', '命令', 'script', 'tool']
 };
@@ -1907,8 +2740,22 @@ class CodeGenerator {
         }
       }
 
-      // 返回第一个作为默认
-      return Object.values(categoryTemplates)[0];
+      // 按匹配度排序后返回最佳模板
+      const sorted = Object.values(categoryTemplates)
+        .map(tmpl => ({
+          tmpl,
+          score: (lowerTask.includes(tmpl.name.toLowerCase()) ? 10 : 0) +
+                 (lowerTask.includes(tmpl.description.toLowerCase()) ? 5 : 0) +
+                 (tmpl.tags && tmpl.tags.some(t => lowerTask.includes(t)) ? 3 : 0)
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      // 如果最佳模板完全不相关（分数为0），返回null让上层走LLM生成
+      if (sorted.length > 0 && sorted[0].score > 0) {
+        return sorted[0].tmpl;
+      }
+      // 无匹配模板，返回null以触发LLM生成
+      return null;
     }
 
     // 在所有类别中搜索

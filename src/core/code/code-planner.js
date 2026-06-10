@@ -1,5 +1,5 @@
 /**
- * CodePlanner - 代码规划引擎 v1.1.0
+ * CodePlanner - 代码规划引擎 v2.0.0
  *
  * 功能：
  * 1. 任务分析：识别任务类型（create/modify/fix/optimize/refactor）
@@ -447,7 +447,7 @@ class CodePlanner {
       id: fileIdCounter++,
       path: entryFile,
       action: 'create',
-      deps: this._getEntryDependencies(moduleAnalysis, template),
+      deps: this._getEntryDependencies(moduleAnalysis, template, language),
       layer: 'entry',
       description: `${projectName} 入口文件`
     });
@@ -722,15 +722,16 @@ class CodePlanner {
    * 获取入口文件的依赖
    * @private
    */
-  _getEntryDependencies(moduleAnalysis, template) {
+  _getEntryDependencies(moduleAnalysis, template, language) {
     const deps = [];
     const base = template.base ? `${template.base}/` : '';
+    const ext = template.extensions[language === 'python' ? 'py' : language === 'go' ? 'go' : 'ts'] || '.js';
 
     if (moduleAnalysis.hasAPI) {
-      deps.push(`${base}${template.layers.routes}/index.${template.extensions.ts || '.js'}`);
+      deps.push(`${base}${template.layers.routes}/index.${ext}`);
     }
     if (moduleAnalysis.hasConfig) {
-      deps.push(`${base}${template.layers.config}/index.${template.extensions.ts || '.js'}`);
+      deps.push(`${base}${template.layers.config}/index.${ext}`);
     }
 
     return deps;
@@ -889,17 +890,21 @@ class CodePlanner {
 
     for (const dep of deps) {
       const moduleName = path.basename(dep, path.extname(dep));
+      const fullPath = dep.startsWith('.') ? dep : `./${dep}`;
 
       switch (language) {
         case 'javascript':
+          imports.push(`const ${moduleName} = require('${fullPath}');`);
+          break;
         case 'typescript':
-          imports.push(`const ${moduleName} = require('./${moduleName}');`);
+          // TypeScript 默认使用 ESM 导入
+          imports.push(`import ${moduleName} from '${fullPath}';`);
           break;
         case 'python':
-          imports.push(`from ${moduleName} import *`);
+          imports.push(`from ${moduleName} import (  # TODO: 填充具体导入名\n)`);
           break;
         case 'go':
-          imports.push(`import "${moduleName}"`);
+          imports.push(`import "${moduleName}"  // 注意：Go 中请使用实际包的完整导入路径`);
           break;
         default:
           imports.push(`// import ${moduleName}`);
@@ -979,7 +984,7 @@ export default app;
 `;
       case 'python':
         return `"""
-${plan.project_name} - 入口文件
+${plan.projectName} - 入口文件
 生成时间: ${new Date().toISOString()}
 """
 
@@ -2295,7 +2300,8 @@ module.exports = db;
     }
 
     // 根据失败类型调整策略（原有逻辑）
-    let adaptedPlan = { ...plan };
+    // 深拷贝计划，避免修改原始对象
+    let adaptedPlan = JSON.parse(JSON.stringify(plan));
 
     switch (failureAnalysis.type) {
       case 'dependency_missing':
@@ -2623,9 +2629,9 @@ module.exports = db;
    * 检测外部依赖
    */
   _isExternalDep(dep) {
+    // 非相对路径（不以 . 或 / 开头）即视为外部依赖（npm、pip 包等）
     return !dep.startsWith('.') &&
-           !dep.startsWith('/') &&
-           !dep.includes('/') === false;
+           !dep.startsWith('/');
   }
 
   /**
@@ -2952,12 +2958,17 @@ module.exports = db;
    */
   _topologicalSort(steps) {
     const sorted = [];
-    const visited = new Set();
+    const state = new Map(); // 'white' | 'gray' | 'black'
     const stepMap = new Map(steps.map(s => [s.id, s]));
 
     const visit = (step) => {
-      if (visited.has(step.id)) return;
-      visited.add(step.id);
+      const currentState = state.get(step.id);
+      if (currentState === 'black') return;
+      if (currentState === 'gray') {
+        console.warn(`[CodePlanner] 检测到循环依赖: ${step.id}，跳过此路径`);
+        return;
+      }
+      state.set(step.id, 'gray');
 
       // 先访问依赖
       for (const depId of (step.deps || [])) {
@@ -2967,11 +2978,14 @@ module.exports = db;
         }
       }
 
+      state.set(step.id, 'black');
       sorted.push(step);
     };
 
     for (const step of steps) {
-      visit(step);
+      if (state.get(step.id) !== 'black') {
+        visit(step);
+      }
     }
 
     return sorted;

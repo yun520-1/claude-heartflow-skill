@@ -89,7 +89,18 @@
       "createdAt": "2026-06-06T03:01:47.231Z",
       "lastSeen": "2026-06-06T03:01:47.231Z",
       "retentionScore": 5
+    },
+    {
+      "id": "lesson-1780968573623-40f33916",
+      "type": "correction",
+      "contentPreview": "验证测试",
+      "trigger": "heartflow",
+      "importance": 3,
+      "frequency": 1,
+      "createdAt": "2026-06-09T01:29:33.623Z",
+      "lastSeen": "2026-06-09T01:29:33.623Z",
+      "retentionScore": 3
     }
   ],
-  "lastUpdated": "2026-06-06T03:01:47.231Z"
+  "lastUpdated": "2026-06-09T01:29:33.624Z"
 }

@@ -1,18 +1,24 @@
 /**
- * HeartFlow MeaningfulMemory v1.0.0
- * 
+ * HeartFlow MeaningfulMemory v2.1.0
+ *
  * Three-layer persistent memory:
  * - CORE: identity, directives, verified truths (never deleted)
  * - LEARNED: lessons from conversations, repair strategies, user preferences
  * - EPHEMERAL: task context, working notes (auto-cleaned)
- * 
+ *
  * Multi-channel search:
  * - keyword: exact phrase matching
  * - semantic: embedding similarity
  * - narrative: graph traversal by relation type
  * - temporal: time-range filtering
  * - emotional: PAD state similarity
- * 
+ *
+ * v2.1.0 升级（memory 方向）：
+ * - 记忆去重引擎：自动合并近似短期记忆
+ * - 时效感知搜索：按记忆新鲜度加权排序
+ * - 分层检索提升：CORE/LEARNED/EPHEMERAL 逐级加权
+ * - 智能合并：多信号复合评估（访问频次+重要性+时效+标签）
+ *
  * Persistence: JSON file auto-saved on store(), loaded on init().
  * File: ~/.hermes/skills/ai/claude-heartflow-skill/data/meaningful-memory.json
  */
@@ -77,6 +83,128 @@ class MeaningfulMemory {
 
     // Inject foundational CORE memories on first run
     this._ensureCoreMemories();
+  }
+
+  // ════════════════════════════════════════════
+  // [v2.1.0 新增] 记忆去重引擎
+  // ════════════════════════════════════════════
+
+  /**
+   * 查找并合并近似的短期记忆（ephemeral 层）
+   * 防止相同/相似内容反复存储造成冗余
+   * @param {number} similarityThreshold - 余弦相似度阈值（默认 0.85）
+   * @param {number} maxAgeMs - 只合并 maxAgeMs 以内的记忆
+   * @returns {number} 合并数
+   */
+  deduplicateEphemeral(similarityThreshold = 0.85, maxAgeMs = 24 * 60 * 60 * 1000) {
+    const now = Date.now();
+    const cutoff = now - maxAgeMs;
+    let merged = 0;
+
+    const ephemeral = this.layers.ephemeral || [];
+    if (ephemeral.length < 2) return 0;
+
+    const toRemove = new Set();
+
+    for (let i = 0; i < ephemeral.length; i++) {
+      if (toRemove.has(ephemeral[i].id)) continue;
+      if (ephemeral[i].timestamp < cutoff) continue;
+
+      for (let j = i + 1; j < ephemeral.length; j++) {
+        if (toRemove.has(ephemeral[j].id)) continue;
+        if (ephemeral[j].timestamp < cutoff) continue;
+
+        // 时间相近 + 内容相似（用嵌入余弦或文本重叠）
+        const timeDiff = Math.abs(ephemeral[i].timestamp - ephemeral[j].timestamp);
+        if (timeDiff > 3600000) continue; // 1小时内才考虑合并
+
+        const embI = this.vectors.get(ephemeral[i].id);
+        const embJ = this.vectors.get(ephemeral[j].id);
+        let similarity = 0;
+
+        if (embI && embJ) {
+          similarity = this.cosineSimilarity(embI, embJ);
+        } else {
+          // 降级：文本 Jaccard 相似
+          const tokensI = new Set((ephemeral[i].content || '').toLowerCase().split(/\s+/));
+          const tokensJ = new Set((ephemeral[j].content || '').toLowerCase().split(/\s+/));
+          const intersection = new Set([...tokensI].filter(t => tokensJ.has(t)));
+          const union = new Set([...tokensI, ...tokensJ]);
+          similarity = union.size > 0 ? intersection.size / union.size : 0;
+        }
+
+        if (similarity >= similarityThreshold) {
+          // 合并：保留重要性更高的，或更新颖的
+          const keeper = ephemeral[i].importance >= ephemeral[j].importance ? i : j;
+          const discard = keeper === i ? j : i;
+
+          // 把被合并的访问计数累加到保留的记忆上
+          if (discard > keeper) {
+            // 调整顺序确保 keeper 在前
+          }
+          ephemeral[discard]._mergedInto = ephemeral[keeper].id;
+          ephemeral[keeper].accessCount = (ephemeral[keeper].accessCount || 0) + (ephemeral[discard].accessCount || 0);
+          ephemeral[keeper].updatedAt = now;
+          if (ephemeral[discard].metadata?.topic && !ephemeral[keeper].metadata?.topic) {
+            ephemeral[keeper].metadata.topic = ephemeral[discard].metadata.topic;
+          }
+          toRemove.add(ephemeral[discard].id);
+          this.vectors.delete(ephemeral[discard].id);
+          merged++;
+        }
+      }
+    }
+
+    if (merged > 0) {
+      this.layers.ephemeral = this.layers.ephemeral.filter(m => !toRemove.has(m.id));
+      this.stats.lastDedup = new Date().toISOString();
+      console.log(`[MeaningfulMemory] 去重: 合并 ${merged} 条冗余记忆`);
+    }
+    return merged;
+  }
+
+  /**
+   * 记录一条搜索使用（用于统计和提升）
+   */
+  _recordAccess(memoryId) {
+    const mem = this._findMemoryById(memoryId);
+    if (mem) {
+      mem.accessCount = (mem.accessCount || 0) + 1;
+      mem.lastAccessedAt = Date.now();
+    }
+  }
+
+  // ════════════════════════════════════════════
+  // [v2.1.0 新增] 时效感知搜索（带衰减权重）
+  // ════════════════════════════════════════════
+
+  /**
+   * 计算搜索结果的时效权重（1h 内 ≈ 1.0，24h 衰减到 0.6，30d 衰减到 0.2）
+   */
+  _recencyWeight(timestamp) {
+    const ageHours = (Date.now() - timestamp) / 3600000;
+    if (ageHours < 1) return 1.0;
+    if (ageHours < 24) return 1.0 - 0.4 * (ageHours / 24);      // 1h→24h: 1.0→0.6
+    if (ageHours < 720) return 0.6 - 0.4 * (ageHours - 24) / 696; // 24h→30d: 0.6→0.2
+    return 0.2;
+  }
+
+  /**
+   * 获取增强版搜索结果（含时效权重 + 分层提升）
+   * @returns {Array} 带 recency, layerBoost, finalScore 的增强结果
+   */
+  _enrichResults(results, channel) {
+    return results.map(r => {
+      const recency = r.timestamp ? this._recencyWeight(r.timestamp) : 0.5;
+      // 分层提升：CORE 0.15 / LEARNED 0.10 / EPHEMERAL 0.0
+      const layerBoost = r.layer === 'core' ? 0.15 : r.layer === 'learned' ? 0.10 : 0;
+      return {
+        ...r,
+        recency,
+        layerBoost,
+        finalScore: (r.score || r.similarity || 0) + recency * 0.15 + layerBoost
+      };
+    }).sort((a, b) => (b.finalScore || 0) - (a.finalScore || 0));
   }
 
   /**
@@ -454,15 +582,15 @@ class MeaningfulMemory {
   // ─────────────────────────────────────────
 
   /**
-   * Keyword search (BM25-style)
+   * Keyword search (BM25-style) — v2.1.0 新增时效权重 + 分层提升
    */
   searchByKeywords(keywords, limit = 10) {
     if (!keywords || keywords.length === 0) return [];
-    
+
     const kwList = Array.isArray(keywords) ? keywords : [keywords];
     const currentTopic = this._currentTopic; // TopicScope 注入的话题标签
     const scores = [];
-    
+
     for (const layer of ['core', 'learned', 'ephemeral']) {
       for (const mem of (this.layers[layer] || [])) {
         // 话题隔离：当前有话题时，只返回当前话题的记忆
@@ -475,23 +603,29 @@ class MeaningfulMemory {
           if (content.includes(kw.toLowerCase())) score += 1;
         }
         if (score > 0) {
-          scores.push({ id: mem.id, layer, content: mem.content, summary: mem.summary, timestamp: mem.timestamp, score, metadata: mem.metadata });
+          this._recordAccess(mem.id);
+          scores.push({
+            id: mem.id, layer, content: mem.content, summary: mem.summary,
+            timestamp: mem.timestamp, score, metadata: mem.metadata
+          });
         }
       }
     }
-    
-    scores.sort((a, b) => b.score - a.score);
-    return scores.slice(0, limit);
+
+    // 时效加权 + 分层提升
+    const enriched = this._enrichResults(scores);
+    enriched.sort((a, b) => b.finalScore - a.finalScore);
+    return enriched.slice(0, limit);
   }
   
   /**
-   * Semantic search (embedding cosine similarity)
+   * Semantic search (embedding cosine similarity) — v2.1.0 新增时效权重 + 分层提升
    * 使用真实语义模型或降级到伪嵌入
    */
   semanticSearch(queryEmbedding, topK = 10) {
     const currentTopic = this._currentTopic;
     const similarities = [];
-    
+
     // 如果有真实语义模型可用
     const ss = getSemanticSearch();
     if (ss && ss.isAvailable()) {
@@ -504,6 +638,7 @@ class MeaningfulMemory {
           if (currentTopic && memory.metadata?.topic && memory.metadata.topic !== currentTopic) {
             continue;
           }
+          this._recordAccess(id);
           similarities.push({
             id, content: memory.content, summary: memory.summary,
             layer: memory.layer, timestamp: memory.timestamp,
@@ -511,10 +646,11 @@ class MeaningfulMemory {
           });
         }
       }
-      similarities.sort((a, b) => b.similarity - a.similarity);
-      return similarities.slice(0, topK);
+      const enriched = this._enrichResults(similarities);
+      enriched.sort((a, b) => b.finalScore - a.finalScore);
+      return enriched.slice(0, topK);
     }
-    
+
     // 降级：使用向量存储中的伪嵌入
     for (const [id, embedding] of this.vectors) {
       const sim = this.cosineSimilarity(queryEmbedding, embedding);
@@ -524,20 +660,18 @@ class MeaningfulMemory {
         if (currentTopic && memory.metadata?.topic && memory.metadata.topic !== currentTopic) {
           continue;
         }
+        this._recordAccess(id);
         similarities.push({
-          id,
-          content: memory.content,
-          summary: memory.summary,
-          layer: memory.layer,
-          timestamp: memory.timestamp,
-          similarity: sim,
-          metadata: memory.metadata
+          id, content: memory.content, summary: memory.summary,
+          layer: memory.layer, timestamp: memory.timestamp,
+          similarity: sim, metadata: memory.metadata
         });
       }
     }
-    
-    similarities.sort((a, b) => b.similarity - a.similarity);
-    return similarities.slice(0, topK);
+
+    const enriched = this._enrichResults(similarities);
+    enriched.sort((a, b) => b.finalScore - a.finalScore);
+    return enriched.slice(0, topK);
   }
   
   /**
@@ -908,32 +1042,67 @@ class MeaningfulMemory {
     };
   }
   
-  consolidateMemories() {
-    // Promote high-access ephemeral memories to learned
+  /**
+   * Consolidate memories — v2.1.0 多信号智能合并
+   * 将 EPHEMERAL 中高价值的记忆提升到 LEARNED 层
+   * 同时运行去重 + 遗忘曲线
+   */
+  consolidateMemories(options = {}) {
+    // 1. 先去重
+    if (options.dedup !== false) {
+      this.deduplicateEphemeral(0.85, 24 * 60 * 60 * 1000);
+    }
+
+    // 2. 评估每条 EPHEMERAL 的综合价值
+    const now = Date.now();
     const toPromote = [];
+
     for (const mem of (this.layers.ephemeral || [])) {
-      if ((mem.accessCount || 0) >= 3 && mem.importance >= 12) {
-        toPromote.push(mem.id);
+      // 多信号评估
+      const signals = {
+        accessCount: Math.min((mem.accessCount || 0) / 5, 1.0),      // 5次访问=满分
+        importance: Math.min((mem.importance || 5) / 20, 1.0),       // 20分=满分
+        recency: mem.lastAccessedAt ? this._recencyWeight(mem.lastAccessedAt) : 0.3,
+        hasLesson: mem.metadata?.lesson ? 1.0 : mem.metadata?.userPreference ? 0.8 : 0,
+        hasTopic: mem.metadata?.topic ? 0.3 : 0
+      };
+
+      const compositeScore =
+        signals.accessCount * 0.25 +
+        signals.importance * 0.30 +
+        signals.recency * 0.15 +
+        signals.hasLesson * 0.20 +
+        signals.hasTopic * 0.10;
+
+      // 标记评估结果
+      mem._consolidationScore = compositeScore;
+
+      // 阈值：0.45 以上提升
+      if (compositeScore >= (options.promotionThreshold || 0.45)) {
+        toPromote.push(mem);
       }
     }
-    
+
+    // 3. 执行提升
     const promoted = [];
-    for (const id of toPromote) {
-      const mem = this._findMemoryById(id);
-      if (mem) {
-        mem.layer = 'learned';
-        mem.updatedAt = Date.now();
-        promoted.push(id);
-      }
+    for (const mem of toPromote) {
+      mem.layer = 'learned';
+      mem.updatedAt = now;
+      mem._promotedAt = now;
+      promoted.push(mem.id);
     }
-    
-    // Rebuild layer indices
+
+    // 4. 重建层索引
     this.layers.core = (this.layers.core || []).filter(m => true);
     this.layers.learned = (this.layers.learned || []).filter(m => true);
-    this.layers.ephemeral = (this.layers.ephemeral || []).filter(m => true);
-    
+    this.layers.ephemeral = (this.layers.ephemeral || []).filter(m => !promoted.includes(m.id));
+
     this._autoSave();
-    return { promoted: [...new Set(promoted)], layers: this.getLayerStats() };
+    return {
+      promoted: promoted,
+      scores: toPromote.map(m => ({ id: m.id, score: m._consolidationScore })),
+      layers: this.getLayerStats()
+    };
   }
   
   getLayerStats() {

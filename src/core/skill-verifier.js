@@ -6,7 +6,7 @@ const { assert } = require('./assertions');
 
 // 已知的 valid skill names (用于交叉引用检查)
 const knownSkills = new Set([
-  'heartflow', 'heartflow-engine', 'verification-engine', 'upgrade-proposal',
+  'heartflow', 'heartflow-engine', 'verification-engine',
   'stability-guard', 'state-snapshot', 'execution-verifier', 'claim-extractor',
   'hypothesis-tester', 'lesson-retrieval', 'skill-verifier', 'lesson-bank',
   'reflector', 'meta-engine', 'being-logic', 'heart-logic', 'memory',

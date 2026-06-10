@@ -1,5 +1,5 @@
 /**
- * HeartFlow CodeVerifier v1.0.0
+ * HeartFlow CodeVerifier v2.0.0
  *
  * 代码验证引擎 - 三层验证 + 质量评分
  *
@@ -152,6 +152,7 @@ function calculateComplexity(code) {
 const _resultCache = new Map();
 const CACHE_MAX_SIZE = 100;
 const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+let _cacheHits = 0; // 累计缓存命中次数（用于计算命中率）
 
 function getCacheKey(code, language, method) {
   return crypto.createHash('md5').update(`${method}:${language}:${code}`).digest('hex');
@@ -164,6 +165,7 @@ function getFromCache(key) {
     _resultCache.delete(key);
     return null;
   }
+  _cacheHits++;
   return entry.data;
 }
 
@@ -718,17 +720,16 @@ class CodeVerifier {
 
     // 检查是否已经是完整模块
     if (!code.includes('module.exports') && !code.includes('export')) {
-      // 添加输出捕获包装
+      // 先覆盖 console.log，再执行用户代码，确保输出被捕获
       wrappedCode = `
 const _hf_output = [];
-${code}
-
-// 如果有 console.log，捕获它
 const _origLog = console.log;
 console.log = (...args) => {
   _hf_output.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
   _origLog.apply(console, args);
 };
+
+${code}
 
 // 执行主逻辑（如果有）
 if (typeof main === 'function') main();
@@ -782,17 +783,12 @@ console.log(JSON.stringify({ output: _hf_output, result: typeof result !== 'unde
    * @param {Object} result - 结果对象
    */
   async _verifyPythonLogic(code, expectedOutput, result) {
-    // 包装代码以捕获输出
+    // 包装代码以捕获输出（先替换 stdout，再插入用户代码）
     let wrappedCode = `
 import sys
 from io import StringIO
 
-_hf_output = []
-_hf_buffer = StringIO()
-
-${code}
-
-# 如果有 print，捕获它
+# 替换 stdout 以捕获 print 输出
 class OutputCapture:
     def write(self, text):
         if text.strip():
@@ -802,7 +798,11 @@ class OutputCapture:
     def flush(self):
         pass
 
+_hf_output = []
+_hf_buffer = StringIO()
 sys.stdout = OutputCapture()
+
+${code}
 
 # 执行主逻辑（如果有）
 if 'main' in dir():
@@ -1036,9 +1036,9 @@ print(_hf_output)
 
     // 默认测试生成逻辑
     const testTemplates = {
-      js: (task) => `// TDD 测试: ${task}\nconst assert = require('assert');\n\n// 测试用例\ntry {\n  // TODO: 实现以下测试\n  console.log('Testing: ${task}');\n  assert.strictEqual(1, 1, '占位测试');\n  console.log('✓ 测试通过');\n} catch (e) {\n  console.error('✗ 测试失败:', e.message);\n  process.exit(1);\n}`,
-      python: (task) => `# TDD 测试: ${task}\nimport unittest\n\nclass TestImplementation(unittest.TestCase):\n    def test_placeholder(self):\n        # TODO: 实现以下测试\n        print("Testing: ${task}")\n        self.assertEqual(1, 1, "占位测试")\n\nif __name__ == '__main__':\n    unittest.main()`,
-      shell: (task) => `#!/bin/bash\n# TDD 测试: ${task}\necho "Testing: ${task}"\n# TODO: 实现以下测试\nassert() {\n  if [ "$1" != "$2" ]; then\n    echo "✗ 测试失败: expected '$2', got '$1'"\n    exit 1\n  fi\n}\nassert "1" "1"\necho "✓ 测试通过"`
+      js: (task) => `// TDD 测试: ${task}\nconst assert = require('assert');\n\n// 测试用例\ntry {\n  // TODO: 实现以下测试\n  console.log('Testing: ${task}');\n  assert.strictEqual(1, 0, '占位测试（RED阶段：此测试预期失败，请替换为真实测试）');\n  console.log('✓ 测试通过');\n} catch (e) {\n  console.error('✗ 测试失败:', e.message);\n  process.exit(1);\n}`,
+      python: (task) => `# TDD 测试: ${task}\nimport unittest\n\nclass TestImplementation(unittest.TestCase):\n    def test_placeholder(self):\n        # TODO: 实现以下测试\n        print("Testing: ${task}")\n        self.assertEqual(1, 0, "占位测试（RED阶段：此测试预期失败，请替换为真实测试）")\n\nif __name__ == '__main__':\n    unittest.main()`,
+      shell: (task) => `#!/bin/bash\n# TDD 测试: ${task}\necho "Testing: ${task}"\n# TODO: 实现以下测试\nassert() {\n  if [ "$1" != "$2" ]; then\n    echo "✗ 测试失败: expected '$2', got '$1'"\n    exit 1\n  fi\n}\nassert "1" "0"\necho "✓ 测试通过"`
     };
 
     const template = testTemplates[language.toLowerCase()];
@@ -1471,7 +1471,7 @@ print(_hf_output)
       ...this.stats,
       cacheSize: _resultCache.size,
       cacheHitRate: this.stats.totalVerifications > 0
-        ? ((this.stats.totalVerifications - _resultCache.size) / this.stats.totalVerifications * 100).toFixed(1) + '%'
+        ? ((_cacheHits / this.stats.totalVerifications) * 100).toFixed(1) + '%'
         : '0%'
     };
   }
@@ -1515,15 +1515,21 @@ print(_hf_output)
    */
   async runWithCoverage(code, language, options = {}) {
     const { instrumented, probes } = this.instrumentCode(code, language);
-    const output = await this.execute(instrumented, language, options);
-    return {
-      output,
-      coverage: {
-        probes,
-        lineCount: Object.values(probes).filter(p => p.count > 0).length,
-        totalLines: Object.keys(probes).length,
-      }
-    };
+    const ext = language === 'javascript' ? '.js' : `.${language}`;
+    const tempFile = writeTempFile(instrumented, ext);
+    try {
+      const result = await execCommand('node', [tempFile], { timeout: options.timeout || 30000 });
+      return {
+        output: result.stdout,
+        coverage: {
+          probes,
+          lineCount: Object.values(probes).filter(p => p.count > 0).length,
+          totalLines: Object.keys(probes).length,
+        }
+      };
+    } finally {
+      try { deleteTempFile(tempFile); } catch (_) { /* 忽略清理错误 */ }
+    }
   }
 
   /**

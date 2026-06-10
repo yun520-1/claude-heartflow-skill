@@ -36,7 +36,7 @@ function loadAll({ hf, rootPath }) {
     codeExecutor:   new CodeExecutor({ hf }),
     codeVerifier:   new CodeVerifier({ hf }),
     codePlanner:    new CodePlanner({ hf }),
-    codeKnowledge:  new CodeKnowledge({ rootPath: rootPath || (hf?.rootPath) || __dirname }),
+    codeKnowledge:  new CodeKnowledge({ rootPath: rootPath || hf?.rootPath }),
     codeRefactor:   new CodeRefactor({ hf }),
   };
 }
@@ -50,6 +50,10 @@ function loadAll({ hf, rootPath }) {
  * @param {Object} modules - loadAll() 返回的模块对象
  */
 function registerToHeartFlow(hf, modules) {
+  if (!hf || !modules) {
+    console.warn('[CodeIndex] registerToHeartFlow: hf 或 modules 无效，跳过注册');
+    return;
+  }
   if (!hf._modules) hf._modules = {};
 
   // codeGenerator 作为主入口暴露为 'code'

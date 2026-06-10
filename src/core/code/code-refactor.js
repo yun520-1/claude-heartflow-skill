@@ -10,7 +10,7 @@
  * 重构变换聚焦 JS/TS/Python，不依赖外部 parser，使用正则 + 结构分析。
  *
  * @author HeartFlow
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 const path = require('path');
@@ -59,6 +59,30 @@ const REFACTORING_PATTERNS = {
     description: '将重复出现的复杂表达式提取为中间变量',
     severity: 'medium',
     languages: ['javascript', 'typescript', 'python'],
+    confidence: 'medium',
+  },
+  // ─── 箭头函数转换 ────────────────────────────────────────
+  'arrow-function': {
+    name: '函数表达式 → 箭头函数',
+    description: '将 function() {} 表达式转换为箭头函数 () => {}',
+    severity: 'info',
+    languages: ['javascript', 'typescript'],
+    confidence: 'medium',
+  },
+  // ─── 解构赋值 ────────────────────────────────────────────
+  'destructure': {
+    name: '解构赋值',
+    description: '将连续 obj.prop 访问替换为解构赋值',
+    severity: 'info',
+    languages: ['javascript', 'typescript'],
+    confidence: 'medium',
+  },
+  // ─── 模板字面量 ──────────────────────────────────────────
+  'template-literal': {
+    name: '字符串拼接 → 模板字面量',
+    description: '将 "a" + expr + "b" 替换为模板字面量 `a${expr}b`',
+    severity: 'info',
+    languages: ['javascript', 'typescript'],
     confidence: 'medium',
   },
 };
@@ -434,7 +458,11 @@ class CodeRefactor {
    * 判断是否可自动修复
    */
   _isAutoFixable(type, lang) {
-    return ['magic-number', 'var-declaration'].includes(type);
+    const autoFixableTypes = [
+      'magic-number', 'var-declaration',
+      'arrow-function', 'destructure', 'template-literal',
+    ];
+    return autoFixableTypes.includes(type);
   }
 
   /**
@@ -483,6 +511,9 @@ class CodeRefactor {
     const transformers = {
       'var-to-let': () => this._transformVarToLet(code, lang),
       'extract-constant': () => this._transformExtractConstant(code, lang, options),
+      'arrow-function': () => this._transformArrowFunction(code, lang),
+      'destructure': () => this._transformDestructure(code, lang),
+      'template-literal': () => this._transformTemplateLiteral(code, lang),
     };
 
     const transformer = transformers[type];
@@ -602,6 +633,250 @@ class CodeRefactor {
         constName,
         value,
       }],
+    };
+  }
+
+  /**
+   * 变换: 函数表达式 → 箭头函数
+   * 将 `function() { ... }` 转换为 `() => { ... }`
+   * 注意到函数内如果使用了 this/arguments，跳过转换
+   */
+  _transformArrowFunction(code, lang) {
+    if (lang !== 'javascript' && lang !== 'typescript') {
+      return { success: false, code, changes: [], error: `箭头函数变换不支持语言: ${lang}` };
+    }
+
+    const changes = [];
+    const fnExprPattern = /(?<!=)\b(function)\s*\(([^)]*)\)\s*\{/g;
+    let result = code;
+    let offset = 0;
+
+    let match;
+    while ((match = fnExprPattern.exec(code)) !== null) {
+      const fullMatch = match[0];
+      const startIdx = match.index;
+
+      // 排除 async function 和 function 声明（行首开始）
+      const lineStart = code.lastIndexOf('\n', startIdx - 1) + 1;
+      const beforeText = code.slice(lineStart, startIdx).trim();
+
+      // 跳过已命中 async 的 function
+      if (beforeText.endsWith('async ')) continue;
+
+      // 检查是否是函数声明（以 function 开头或前面有 export）
+      if (beforeText === '' || /^\s*(export\s+)?(async\s+)?function\s+\w/.test(code.slice(lineStart, startIdx + match[1].length + 15))) {
+        continue;
+      }
+
+      // 找到函数体范围
+      let depth = 0;
+      let bodyEnd = -1;
+      const bodyStart = startIdx + fullMatch.indexOf('{');
+      for (let i = bodyStart; i < code.length; i++) {
+        if (code[i] === '{') depth++;
+        if (code[i] === '}') {
+          depth--;
+          if (depth === 0) { bodyEnd = i + 1; break; }
+        }
+      }
+      if (bodyEnd === -1) continue;
+
+      const body = code.slice(bodyStart, bodyEnd);
+
+      // 检查是否使用了 this/arguments（需要绑定则不转换）
+      const bodyWithoutStr = body.replace(/['"`].*?['"`]/g, '');
+      if (/\bthis\b/.test(bodyWithoutStr) || /\barguments\b/.test(bodyWithoutStr)) continue;
+
+      // 获取参数列表
+      const params = match[2].trim();
+
+      // 构建箭头函数
+      const indent = body.match(/^(\s*)/)[1];
+      const arrowFn = params
+        ? `(${params}) => ${body}`
+        : `() => ${body}`;
+
+      // 替换原代码中的函数表达式部分
+      const beforeReplacement = result.slice(0, startIdx + offset);
+      const afterReplacement = result.slice(bodyEnd + offset);
+      result = beforeReplacement + arrowFn + afterReplacement;
+      offset += arrowFn.length - (bodyEnd - startIdx);
+
+      const lineNo = code.slice(0, startIdx).split('\n').length;
+      changes.push({
+        type: 'arrow-function',
+        line: lineNo,
+        params: params || 'none',
+      });
+    }
+
+    return { success: true, code: result, changes };
+  }
+
+  /**
+   * 变换: 解构赋值
+   * 将连续出现的 `obj.prop1`, `obj.prop2` 转换为 `const { prop1, prop2 } = obj;`
+   */
+  _transformDestructure(code, lang) {
+    const changes = [];
+    const lines = code.split('\n');
+
+    // 检测同一对象连续属性访问模式
+    // 模式: const foo = obj.a; const bar = obj.b; ...
+    const pattern = /^\s*(?:const|let|var)\s+(\w+)\s*=\s*(\w+)\.(\w+)\s*;?\s*$/;
+    const grouped = []; // [{ base, props: [{varName, propName, lineIdx}] }]
+
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(pattern);
+      if (!m) continue;
+
+      const varName = m[1];
+      const baseObj = m[2];
+      const propName = m[3];
+
+      if (baseObj === 'this') continue;
+
+      // 检查上一次分组是否是同一对象
+      const lastGroup = grouped[grouped.length - 1];
+      if (lastGroup && lastGroup.base === baseObj && i - lastGroup.lastLineIdx <= 2) {
+        lastGroup.props.push({ varName, propName, lineIdx: i });
+        lastGroup.lastLineIdx = i;
+      } else {
+        grouped.push({ base: baseObj, props: [{ varName, propName, lineIdx: i }], lastLineIdx: i, firstLineIdx: i });
+      }
+    }
+
+    // 只处理连续 3 个以上属性访问的分组
+    const eligible = grouped.filter(g => g.props.length >= 3);
+    if (eligible.length === 0) {
+      return { success: true, code, changes: [] };
+    }
+
+    let result = code;
+    // 从后往前替换，避免行号偏移
+    for (const group of eligible.reverse()) {
+      const firstIdx = group.firstLineIdx;
+      const linesArr = result.split('\n');
+
+      // 标记这些行为空
+      for (const prop of group.props) {
+        linesArr[prop.lineIdx] = '';
+      }
+
+      const indent = lines[firstIdx].match(/^\s*/)[0];
+      const propNames = group.props.map(p => p.propName);
+      const varNames = group.props.map(p => p.varName);
+
+      const destLine = `${indent}const { ${propNames.join(', ')} } = ${group.base};`;
+      linesArr[firstIdx] = destLine;
+
+      result = linesArr.filter(l => l !== '').join('\n');
+      changes.push({
+        type: 'destructure',
+        line: firstIdx + 1,
+        base: group.base,
+        props: propNames,
+        variables: varNames,
+      });
+    }
+
+    // 只保留原始 lines 用于 line number 报告
+    return { success: true, code: result, changes };
+  }
+
+  /**
+   * 变换: 字符串拼接 → 模板字面量
+   * 将 'a' + var + 'b' 转换为 `a${var}b`
+   */
+  _transformTemplateLiteral(code, lang) {
+    if (lang !== 'javascript' && lang !== 'typescript') {
+      return { success: false, code, changes: [], error: `模板字面量变换不支持语言: ${lang}` };
+    }
+
+    const changes = [];
+    const concatPattern = /(['"`])((?:(?!\1).)*)\1\s*\+(\s*(['"`])((?:(?!\4).)*)\4\s*(?:\+|$))+/g;
+
+    // 简化处理：查找单行中的字符串拼接模式
+    const lines = code.split('\n');
+    let result = '';
+    let changed = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      // 跳过已用模板字面量的行和注释行
+      if (/^\s*\/\//.test(line) || /^\s*\*/.test(line)) {
+        result += line + '\n';
+        continue;
+      }
+
+      // 检测字符串拼接模式：至少包含一个字符串+变量+字符串的模式
+      const templateCandidate = line.match(/(['"])((?:[^'"]|\\.)*)\1\s*\+\s*(\w[\w.]*)\s*\+\s*(['"])((?:[^'"]|\\.)*)\4/);
+      if (!templateCandidate) {
+        result += line + '\n';
+        continue;
+      }
+
+      // 使用正则将整个拼接表达式替换为模板字面量
+      // 策略：逐段解析拼接链
+      let transformed = line;
+      const concatChain = /(?:'[^']*'|"[^"]*"|\w[\w.]*(?:\s*\([^)]*\))?)\s*\+\s*(?:(?:'[^']*'|"[^"]*"|\w[\w.]*(?:\s*\([^)]*\))?)\s*\+?\s*)+/g;
+
+      transformed = transformed.replace(concatChain, (matchChain) => {
+        // 将 "a" + b + "c" 转换成 `a${b}c`
+        const parts = [];
+        let remaining = matchChain;
+        const partPattern = /(['"])((?:(?!\1).)*)\1|(\w[\w.]*(?:\s*\([^)]*\))?)\s*/g;
+        let partMatch;
+        while ((partMatch = partPattern.exec(remaining)) !== null) {
+          if (partMatch[1] !== undefined) {
+            // 字符串字面量
+            parts.push({ type: 'string', value: partMatch[2] });
+          } else if (partMatch[3] !== undefined && partMatch[3] !== '+') {
+            // 变量/表达式
+            parts.push({ type: 'expr', value: partMatch[3].trim() });
+          }
+        }
+
+        // 跳过纯字符串的拼接（无需模板化）
+        if (parts.every(p => p.type === 'string')) return matchChain;
+
+        // 构建模板字面量
+        let template = '`';
+        for (let p = 0; p < parts.length; p++) {
+          const part = parts[p];
+          if (part.type === 'string') {
+            // 字符串内容中需要转义 `${` 和 ``
+            const escaped = part.value
+              .replace(/`/g, '\\`')
+              .replace(/\$\{/g, '\\${');
+            template += escaped;
+          } else {
+            template += `${part.value}`;
+          }
+        }
+        template += '`';
+
+        // 验证模板与原始表达式计算结果不同时才转换（避免 $${ 误转）
+        // 简化处理：直接返回
+        return template;
+      });
+
+      if (transformed !== line) {
+        changed = true;
+        changes.push({
+          type: 'template-literal',
+          line: i + 1,
+          before: line.trim(),
+          after: transformed.trim(),
+        });
+      }
+      result += transformed + '\n';
+    }
+
+    return {
+      success: true,
+      code: result.replace(/\n$/, ''),
+      changes,
     };
   }
 

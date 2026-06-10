@@ -276,6 +276,17 @@ class HeartFlow {
 
     // Evolution
     this.evolution = new (_EvolutionLoop().EvolutionLoop)({ rootPath: this.rootPath, memory: this.memory }).boot();
+    // 设置 Q-table 上下文环境（Fix C: machineId + environment + region）
+    try {
+      if (this.evolution && this.evolution.core && this.evolution.core.rl) {
+        this.evolution.core.rl.setContext({
+          machineId: require('os').hostname(),
+          environment: process.env.NODE_ENV || process.env.LARK_CHANNEL_PROFILE || 'development',
+          region: process.env.HEARTFLOW_REGION || 'local',
+        });
+        console.warn('[HeartFlow] Q-table 上下文已设置');
+      }
+    } catch (e) { /* Q-table 上下文设置为非致命 */ }
     this.dream = new (_DreamEngine().DreamEngine)({});
     this.dreamConsolidation = new (_DreamConsolidation().DreamConsolidation)(this.memory);
     this.lesson = new (_LessonBank().LessonBank)(this.rootPath);
@@ -564,6 +575,7 @@ class HeartFlow {
       this._modules.thoughtChain = this._thoughtChainApi;
     }
     this._registerModules();
+
     this.started = true;
   }
 
@@ -901,7 +913,27 @@ class HeartFlow {
     if (typeof mod[method] !== 'function') {
       throw new Error(`${subsystem}.${method} is not a function on ${subsystem}`);
     }
-    return mod[method](...args);
+    // Fix A: 透明 lesson 模式检查（不阻断执行，仅记录匹配）
+    if (args.length > 0 && typeof args[0] === 'string' && this.lesson) {
+      try {
+        const lessonHit = this.lesson.checkPattern(args[0]);
+        if (lessonHit && lessonHit.matched) {
+          console.warn(`[HeartFlow] 教训命中 [${route}]: "${lessonHit.pattern || lessonHit.errorPattern}" → ${lessonHit.correction || '无建议'}`);
+        }
+      } catch (e) { /* 教训检查为非阻塞 */ }
+    }
+    const _result = mod[method](...args);
+    // Fix B: decision/evolution 路由结果自动持久化到 LEARNED 记忆层
+    if (route === 'decision.decide' || route === 'evolution.recordOutcome') {
+      try {
+        this.memory.learn(`dispatch:${route.replace('.', ':')}:${Date.now()}`, {
+          route,
+          input: args.length === 1 && typeof args[0] === 'string' ? args[0].slice(0, 200) : '(复合参数)',
+          result: typeof _result === 'object' ? JSON.parse(JSON.stringify(_result)) : _result,
+        }, ['dispatch', route.replace('.', '_'), 'learned']);
+      } catch (e) { /* 记忆存储为非阻塞 */ }
+    }
+    return _result;
   }
 
   /**
@@ -1231,6 +1263,17 @@ class HeartFlow {
       skill: 'heartflow',
       confidence,
     });
+    // Fix B: 自动持久化到 LEARNED 记忆层
+    try {
+      this.memory.learn(`lesson:${addResult.id || Date.now()}`, {
+        type: lesson.type || 'correction',
+        content: lesson.content,
+        context: lesson.context,
+        trigger: lesson.trigger,
+        importance: lesson.importance,
+        confidence,
+      }, ['lesson', lesson.type || 'correction', 'heartflow']);
+    } catch (e) { /* 记忆存储为非阻塞 */ }
     return { success: true, id: addResult.id, via: 'LessonBank' };
   }
 

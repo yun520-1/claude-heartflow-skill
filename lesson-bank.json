@@ -10,7 +10,7 @@
       "successCount": 0,
       "failureCount": 0,
       "createdAt": 1780709358814,
-      "lastHit": 1780709358814
+      "lastHit": 1780971033260
     },
     "lesson_版本号只更新一个文件": {
       "errorPattern": "版本号只更新一个文件",
@@ -215,9 +215,21 @@
       "failureCount": 0,
       "createdAt": 1780714907230,
       "lastHit": 1780714907230
+    },
+    "lesson_测试教训_运行时验证必须实际执行": {
+      "id": "lesson_测试教训_运行时验证必须实际执行",
+      "errorPattern": "测试教训：运行时验证必须实际执行",
+      "correction": "验证测试",
+      "rootCause": "dispatch验证",
+      "skill": "heartflow",
+      "confidence": 0.5,
+      "successCount": 0,
+      "failureCount": 0,
+      "createdAt": 1780968573620,
+      "lastHit": 1780968573620
     }
   },
-  "totalHits": 0,
+  "totalHits": 1,
   "totalSuccesses": 0,
   "totalFailures": 0
 }
