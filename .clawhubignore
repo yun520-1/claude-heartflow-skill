@@ -11,4 +11,7 @@ UPGRADE_REPORT.txt
 upgrades/
 downloads/
 docs/archive/
+archive/
 src/legacy/
+src/core/search/models/
+dict-data/
