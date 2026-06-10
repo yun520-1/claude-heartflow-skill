@@ -1,0 +1,14 @@
+node_modules/
+data/
+memory/
+auth.json
+.env
+*.onnx
+self-verification.json
+*.log
+.DS_Store
+UPGRADE_REPORT.txt
+upgrades/
+downloads/
+docs/archive/
+src/legacy/
