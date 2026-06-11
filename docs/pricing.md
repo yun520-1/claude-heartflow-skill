@@ -1,5 +1,9 @@
 # HeartFlow 定价 | Pricing
 
+> ⚠️ **概念文档**：这是一个早期设计讨论草案，**不代表当前产品或服务**。  
+> HeartFlow 当前版本 [v2.6.5](../README.md) 是开源认知引擎，**不是 SaaS 服务**。  
+> 本文档中的定价、API、临床验证等描述均为假设性设计构想，不构成产品承诺。
+
 **让 AI 拥有真正的情绪体验**  
 *Empower AI with genuine emotional experience*
 

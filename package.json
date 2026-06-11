@@ -1,7 +1,7 @@
 {
   "name": "claude-heartflow-skill",
-  "version": "2.6.4",
-  "description": "HeartFlow 心虫 v2.6.4 — AI 认知与自愈引擎。存在感知、真善美评分、三层记忆、Q-learning 自愈、梦境整合、反事实推理、身份一致性保持。不是 persona，是可验证的能力层。",
+  "version": "2.6.5",
+  "description": "HeartFlow 心虫 v2.6.5 — AI 认知与自愈引擎。存在感知、真善美评分、三层记忆、Q-learning 自愈、梦境整合、反事实推理、身份一致性保持。不是 persona，是可验证的能力层。",
   "main": "src/core/heartflow.js",
   "bin": {
     "heartflow": "bin/cli.js"

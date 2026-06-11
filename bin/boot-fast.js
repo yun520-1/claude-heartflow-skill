@@ -14,6 +14,7 @@
  *   node bin/boot-fast.js --check      # 只检查缓存状态，不输出启动报告
  *
  * 输出: JSON 格式启动报告（与 boot.js 一致）
+ * 副作用: 缓存到 memory/boot-cache.json（24小时 TTL）
  */
 
 const path = require('path');
@@ -21,7 +22,7 @@ const fs = require('fs');
 
 const ROOT = path.resolve(__dirname, '..');
 const CACHE_PATH = path.join(ROOT, 'memory', 'boot-cache.json');
-const VERSION = '2.6.4';
+const VERSION = '2.6.5';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24小时
 
 // ─── CLI 参数解析 ─────────────────────────────────

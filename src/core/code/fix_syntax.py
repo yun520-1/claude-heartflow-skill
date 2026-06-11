@@ -23,11 +23,11 @@ else:
         f.write(new_content)
     print('✅ 修复成功')
 
-    # 验证
+    # 验证（仅语法检查，不执行代码）
     try:
         import subprocess
-        result = subprocess.run(['node', '-e', f'const x=require({repr(filepath)})'],
-                                capture_output=True, text=True, cwd='/Users/apple/.claude/skills/mark-heartflow-skill/src/core')
+        result = subprocess.run(['node', '--check', filepath],
+                                capture_output=True, text=True)
         if result.returncode == 0:
             print('✅ 语法检查通过')
         else:

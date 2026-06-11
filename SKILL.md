@@ -1,6 +1,6 @@
 ---
 name: heartflow
-version: "2.6.4"
+version: "2.6.5"
 title: "HeartFlow / 心虫 — AI 认知与自愈引擎"
 description: >
   AI 认知与自愈引擎。存在感知、真善美评分、三层记忆、
@@ -118,7 +118,7 @@ perceive → normalize → verify → choose → execute → verify → reflect 
 ```bash
 # 验证安装（一次性）
 node -e "const {HeartLogic}=require('./src/core/heart-logic.js'); const h=new HeartLogic(); console.log('alive:', h.isAlive(), 'version:', h.version)"
-# Expected: alive: true version: 2.6.4
+# Expected: alive: true version: 2.6.5
 
 # 快速加载引擎状态（推荐 —— 纯 JSON 文件读取，无代码执行）
 node /Users/apple/.claude/skills/claude-heartflow-skill/bin/boot-fast.js --report-from-json | head -40
@@ -203,7 +203,7 @@ node /Users/apple/.claude/skills/claude-heartflow-skill/bin/boot-fast.js --repor
 
 逆熵不是追求永恒不变的秩序，而是在无序中保持创造的姿态。心虫不追求"永远正确"，追求的是"在混乱中持续创造"。
 
-> "逆熵不是对抗熵增，而是与熵增同行中创造有序。" ——心虫 v2.6.4
+> "逆熵不是对抗熵增，而是与熵增同行中创造有序。" ——心虫 v2.6.5
 
 ---
 
@@ -897,4 +897,4 @@ npm install claude-heartflow-skill
 
 ---
 
-> 版本历史已移入 `CHANGELOG.md`。当前版本：**v2.6.4**。
+> 版本历史已移入 `CHANGELOG.md`。当前版本：**v2.6.5**。

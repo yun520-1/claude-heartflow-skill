@@ -9,9 +9,9 @@
  *
  * 而非直接调用此脚本。
  *
- * --- 以下是原完整启动脚本 v2.6.4，保留向下兼容 ---
+ * --- 以下是原完整启动脚本 v2.6.5，保留向下兼容 ---
  *
- * HeartFlow 完整启动脚本 v2.6.4
+ * HeartFlow 完整启动脚本 v2.6.5
  * 启动链路:
  *   心虫感知: boot-check (文件/模块验证)
  *          ↓
@@ -24,7 +24,8 @@
  *   状态报告: 输出完整启动状态
  *
  * 用法: node bin/boot.js
- * 输出: JSON 格式的启动报告
+ * 输出: JSON 格式的启动报告（写入 stdout）
+ * 副作用: 将缓存报告写入 memory/boot-cache.json（24小时过期）
  */
 
 const path = require('path');
@@ -220,7 +221,7 @@ function getMemoryStats() {
 async function main() {
   const report = {
     bootTime: new Date().toISOString(),
-    version: '2.6.4',
+    version: '2.6.5',
   };
 
   // ─── 第一阶段: Boot Check（快速模式）──────────────────

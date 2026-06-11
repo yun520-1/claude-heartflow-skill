@@ -1,5 +1,9 @@
 # HeartFlow Companion | 心流伴侣
 
+> ⚠️ **版本说明**：本文档描述的是 HeartFlow v5.0.x 的设计构想和早期研究版本。  
+> 当前发布版本为 [v2.6.5](../README.md)，功能和架构可能与此处描述不同。  
+> **本文件为研究笔记，不代表当前产品的实际能力。**
+
 > **Emotionally Anthropomorphic AI Interaction System**  
 > **情感拟人化 AI 交互系统**
 

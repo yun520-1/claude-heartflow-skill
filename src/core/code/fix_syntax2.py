@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """修复 code-generator.js 中的 #arr 语法错误"""
+# 注意：此脚本为一次性开发工具，非运行时模块
 
 import re
+import subprocess
 
 filepath = '/Users/apple/.claude/skills/mark-heartflow-skill/src/core/code/code-generator.js'
 
@@ -64,10 +66,9 @@ else:
             f.write(new_content)
         print('✅ 修复成功')
 
-        # 验证
-        import subprocess
-        result = subprocess.run(['node', '-e', f'require({repr(filepath)})'],
-                                capture_output=True, text=True, cwd='/Users/apple/.claude/skills/mark-heartflow-skill/src/core')
+        # 验证（仅语法检查，不执行代码）
+        result = subprocess.run(['node', '--check', filepath],
+                                capture_output=True, text=True)
         if result.returncode == 0:
             print('✅ 语法检查通过')
         else:

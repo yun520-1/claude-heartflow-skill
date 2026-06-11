@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """修复 code-knowledge.js 中有问题的正则表达式"""
 
+import subprocess
+
 filepath = '/Users/apple/.claude/skills/mark-heartflow-skill/src/core/code/code-knowledge.js'
 
 with open(filepath, 'r', encoding='utf-8') as f:
@@ -29,11 +31,9 @@ else:
         if i in (1701, 1702) and 'javascript:' in line:
             print(f'行 {i+1}: {repr(line)}')
 
-# 验证
-import subprocess
-result = subprocess.run(['node', '-e', f'require({repr(filepath)})'],
-    capture_output=True, text=True,
-    cwd='/Users/apple/.claude/skills/mark-heartflow-skill/src/core/code')
+# 验证（仅语法检查，不执行代码）
+result = subprocess.run(['node', '--check', filepath],
+    capture_output=True, text=True)
 if result.returncode == 0:
     print('✅ 语法检查通过')
 else:

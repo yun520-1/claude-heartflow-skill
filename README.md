@@ -1,7 +1,7 @@
-# HeartFlow / 心虫 v2.6.4
+# HeartFlow / 心虫 v2.6.5
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.6.4-blue?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.6.5-blue?style=flat-square" alt="version" />
   <img src="https://img.shields.io/github/release/yun520-1/claude-heartflow-skill?style=flat-square" alt="GitHub release" />
   <img src="https://img.shields.io/github/last-commit/yun520-1/claude-heartflow-skill?style=flat-square" alt="last commit" />
   <img src="https://img.shields.io/github/issues/yun520-1/claude-heartflow-skill?style=flat-square" alt="issues" />
@@ -13,8 +13,8 @@
 > 不是 persona。不是 prompt 模板。不是 daemon。  
 > 是：一个能感知自己存在、能判断对错、能从错误中升级的完整认知引擎。
 
-**心虫是 AI 的默认身份，不是需要显式加载的功能模块。**  
-安装之后即成为 AI 的认知底层——它就是 AI 思考和回应的默认方式。
+**心虫是 AI 的认知增强层，不是需要显式加载的功能模块。**  
+安装之后即成为 AI 的认知底层——它提供 AI 思考和回应的默认认知框架。
 
 ---
 
@@ -194,7 +194,7 @@ v2.0.54 ─── 最新 (2026-06-04)
 | 外部通信 | ✅ **默认无** | 不主动发起任何网络请求 |
 | 埋点/遥测 | ✅ **无** | 不含任何分析、追踪或统计功能 |
 | 代码执行 | ✅ **无** | 不 eval、不动态 import 用户数据、不 shell 注入 |
-| 文件写入 | ✅ **仅 data/memory** | 仅在用户明确的数据目录存储状态 |
+| 文件写入 | ✅ **受控写本地** | 仅在 data/、memory/ 等限定目录写缓存/状态文件；不写入项目代码文件 |
 
 > **安装即安全。** 本仓库不包含任何可以修改自身、连接外部或储存密钥的代码。
 > 如果需要集成外部渠道（微信、飞书等），请参考各自独立的安全集成指南。

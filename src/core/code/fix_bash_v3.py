@@ -89,10 +89,9 @@ with open(filepath, 'w', encoding='utf-8') as f:
     f.write(new_content)
 print(f'✅ 替换完成 (删除了 {len(old_bash)} 字符，新增 {len(new_bash)} 字符)')
 
-# 验证
-result = subprocess.run(['node', '-e', f'require({repr(filepath)})'],
-    capture_output=True, text=True,
-    cwd='/Users/apple/.claude/skills/mark-heartflow-skill/src/core')
+# 验证（仅语法检查，不执行代码）
+result = subprocess.run(['node', '--check', filepath],
+    capture_output=True, text=True)
 if result.returncode == 0:
     print('✅ 语法检查通过')
 else:
