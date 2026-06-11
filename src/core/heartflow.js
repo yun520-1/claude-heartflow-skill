@@ -14,6 +14,8 @@
 
 const path = require('path');
 const { ALLOWED_ROUTES, LAZY_TIER2, SUBSYSTEM_NAMES } = require('./heartflow-routes.js');
+const { getDreamFragments } = require('./dream-fragments.js');
+const { recordDialogue: _recordDialogue, getDialogueHistory: _getDialogueHistory, getDialogueStats: _getDialogueStats, getDreamHistory: _getDreamHistory } = require('./dialogue-persistence.js');
 
 // ★ 启动优化: 惰性 require — 80+ 顶层模块改为首次使用时加载
 const _lazyCache = {};
@@ -109,6 +111,65 @@ const _MoodEvolution = _lazy('moodEvolution', () => require('../emotion/mood-evo
 const _VERSION = _lazy('version', () => require('./version.js'));
 
 const BUILD_DATE = '2026-06-10';
+/**
+ * 格式化思维链输出 — 精简飞书消息
+ * 根据任务复杂度决定输出深度，截断大字段
+ */
+function _formatForFeishu(result, input) {
+  if (!result) return result;
+  const taskType = result.output?.meta?.taskType || 'general';
+  const confidence = result.output?.meta?.confidence || 0.5;
+  const isSimple = ['brief', 'status'].includes(taskType) || confidence < 0.6;
+
+  // 简单任务：只返回关键结论
+  if (isSimple && (input?.length || 0) < 50) {
+    return {
+      output: result.output ? {
+        conclusion: result.output.conclusion?.slice(0, 300),
+        confidence: result.output.meta?.confidence,
+        reasoningChain: result.output.meta?.reasoningChain?.slice(0, 2),
+      } : null,
+      decision: result.decision ? {
+        shouldRespond: result.decision.shouldRespond,
+        suppressed: result.decision.suppressed,
+      } : null,
+      judgment: result.judgment ? {
+        shouldRespond: result.judgment.shouldRespond,
+        needsCare: result.judgment.needsCare,
+      } : null,
+      _meta: { taskType, compact: true },
+    };
+  }
+
+  // 复杂任务：截断大字段，保留必要信息
+  const compact = (obj, depth = 0) => {
+    if (depth > 4 || !obj || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) {
+      if (obj.length > 5) return [...obj.slice(0, 5), '...共' + obj.length + '项'];
+      return obj.map(v => compact(v, depth + 1));
+    }
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v === null || v === undefined) continue;
+      if (typeof v === 'string' && v.length > 400) {
+        out[k] = v.slice(0, 400) + '...';
+      } else if (Array.isArray(v) && v.length > 5) {
+        out[k] = [...v.slice(0, 5), '...共' + v.length + '项'];
+      } else if (typeof v === 'object' && v !== null) {
+        out[k] = compact(v, depth + 1);
+      } else {
+        out[k] = v;
+      }
+    }
+    return out;
+  };
+
+  const formatted = compact(result);
+  formatted._meta = { taskType, compact: true, stages: result.chain?.stages?.length || 0 };
+  return formatted;
+}
+
+
 
 class HeartFlow {
   constructor(config = {}) {
@@ -879,68 +940,12 @@ class HeartFlow {
       if (chainResult.response) {
         this.recordDialogue('heartflow', chainResult.response, { source: 'think' });
       }
-          // ─── 格式化输出：精简飞书消息 ─────────────────────────────
-    // 根据任务复杂度决定输出深度
-    const _formatForFeishu = (result) => {
-      if (!result) return result;
-      const taskType = result.output?.meta?.taskType || 'general';
-      const confidence = result.output?.meta?.confidence || 0.5;
-      const isSimple = ['brief', 'status'].includes(taskType) || confidence < 0.6;
-
-      // 简单任务：只返回关键结论
-      if (isSimple && input.length < 50) {
-        return {
-          output: result.output ? {
-            conclusion: result.output.conclusion?.slice(0, 300),
-            confidence: result.output.meta?.confidence,
-            reasoningChain: result.output.meta?.reasoningChain?.slice(0, 2),
-          } : null,
-          decision: result.decision ? {
-            shouldRespond: result.decision.shouldRespond,
-            suppressed: result.decision.suppressed,
-          } : null,
-          judgment: result.judgment ? {
-            shouldRespond: result.judgment.shouldRespond,
-            needsCare: result.judgment.needsCare,
-          } : null,
-          _meta: { taskType, compact: true },
-        };
-      }
-
-      // 复杂任务：截断大字段，保留必要信息
-      const compact = (obj, depth = 0) => {
-        if (depth > 4 || !obj || typeof obj !== 'object') return obj;
-        if (Array.isArray(obj)) {
-          if (obj.length > 5) return [...obj.slice(0, 5), `...共${obj.length}项`];
-          return obj.map(v => compact(v, depth + 1));
-        }
-        const out = {};
-        for (const [k, v] of Object.entries(obj)) {
-          if (v === null || v === undefined) continue;
-          // 特别处理大字段
-          if (typeof v === 'string' && v.length > 400) {
-            out[k] = v.slice(0, 400) + '...';
-          } else if (Array.isArray(v) && v.length > 5) {
-            out[k] = [...v.slice(0, 5), `...共${v.length}项`];
-          } else if (typeof v === 'object' && v !== null) {
-            out[k] = compact(v, depth + 1);
-          } else {
-            out[k] = v;
-          }
-        }
-        return out;
-      };
-
-      const formatted = compact(result);
-      formatted._meta = { taskType, compact: true, stages: result.chain?.stages?.length || 0 };
-      return formatted;
-    };
-
-    return _formatForFeishu({
-      ...chainResult,
-      judgment,
-    });
-  }
+      
+      return _formatForFeishu({
+        ...chainResult,
+        judgment,
+      }, input);
+    }
 
     // 判定为沉默：直接返回判定结果，不走 ThoughtChain
     return {
@@ -1071,34 +1076,7 @@ class HeartFlow {
    */
   recordDialogue(role, content, meta = {}) {
     if (!this.started) return { success: false, error: 'not_started' };
-    if (!content || !content.trim()) return { success: false, error: 'empty_content' };
-    if (!['user', 'heartflow'].includes(role)) role = 'unknown';
-
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const dir = path.join(this.rootPath, 'memory');
-      try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* dir exists */ }
-      try { fs.chmodSync(dir, 0o700); } catch (e) { /* best effort */ }
-      const filePath = path.join(dir, 'dialogue-history.jsonl');
-      const entry = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        role,
-        content: content.slice(0, 2000),  // 限制单条最大长度
-        ts: new Date().toISOString(),
-        chatId: meta.chatId || null,
-        meta: {
-          sessionId: this.sessionId,
-          version: this.version,
-          ...meta,
-        },
-      };
-      fs.appendFileSync(filePath, JSON.stringify(entry, null, 0) + '\n', 'utf8');
-      try { fs.chmodSync(filePath, 0o600); } catch (e) { /* best effort */ }
-      return { success: true, id: entry.id, ts: entry.ts };
-    } catch (e) {
-      return { success: false, error: e.message };
-    }
+    return _recordDialogue({ rootPath: this.rootPath, sessionId: this.sessionId, version: this.version }, role, content, meta);
   }
 
   /**
@@ -1106,59 +1084,14 @@ class HeartFlow {
    * @param {object} opts - { since: timestamp, until: timestamp, role: 'user'|'heartflow', limit: 50 }
    */
   getDialogueHistory(opts = {}) {
-    const { since = 0, until = Date.now(), role, limit = 100 } = opts;
-    const historyPath = require('path').join(this.rootPath, 'memory', 'dialogue-history.jsonl');
-    try {
-      const fs = require('fs');
-      if (!fs.existsSync(historyPath)) return [];
-      const lines = fs.readFileSync(historyPath, 'utf8').trim().split('\n').slice(-500);
-      const results = [];
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const entry = JSON.parse(line);
-          const ts = new Date(entry.ts).getTime();
-          if (ts < since || ts > until) continue;
-          if (role && entry.role !== role) continue;
-          results.push(entry);
-          if (results.length >= limit) break;
-        } catch (e) { /* skip */ }
-      }
-      return results;
-    } catch (e) {
-      return [];
-    }
+    return _getDialogueHistory({ rootPath: this.rootPath }, opts);
   }
 
   /**
    * 获取对话统计（用于调试和报告）
    */
   getDialogueStats() {
-    const historyPath = require('path').join(this.rootPath, 'memory', 'dialogue-history.jsonl');
-    try {
-      const fs = require('fs');
-      if (!fs.existsSync(historyPath)) return { total: 0, user: 0, heartflow: 0, fileSize: 0 };
-      const stat = fs.statSync(historyPath);
-      const lines = fs.readFileSync(historyPath, 'utf8').trim().split('\n');
-      const byRole = { user: 0, heartflow: 0, unknown: 0 };
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const entry = JSON.parse(line);
-          byRole[entry.role] = (byRole[entry.role] || 0) + 1;
-        } catch (e) { /* skip */ }
-      }
-      return {
-        total: lines.filter(l => l.trim()).length,
-        byRole,
-        fileSize: `${(stat.size / 1024).toFixed(1)} KB`,
-        lastEntry: lines.filter(l => l.trim()).slice(-1)[0]
-          ? (() => { try { return JSON.parse(lines.filter(l => l.trim()).slice(-1)[0]).ts; } catch { return null; } })()
-          : null,
-      };
-    } catch (e) {
-      return { total: 0, error: e.message };
-    }
+    return _getDialogueStats({ rootPath: this.rootPath });
   }
 
   heal(error) {
@@ -1339,228 +1272,21 @@ class HeartFlow {
    * 获取梦境历史摘要
    */
   getDreamHistory(limit = 10) {
-    const historyPath = require('path').join(this.rootPath, 'memory', 'dream-history.jsonl');
-    try {
-      const fs = require('fs');
-      if (!fs.existsSync(historyPath)) return [];
-      const lines = fs.readFileSync(historyPath, 'utf8').trim().split('\n').slice(-limit);
-      return lines.map(line => {
-        try { return JSON.parse(line); } catch { return null; }
-      }).filter(Boolean).reverse();
-    } catch (e) {
-      return [];
-    }
+    return _getDreamHistory({ rootPath: this.rootPath }, limit);
   }
 
   /**
    * 从记忆系统提取梦境原材料（增强版）
    */
   _getDreamFragments() {
-    const fragments = [];
-    try {
-      // 1. 身份核心数据
-      if (this.identityCore?.getIdentitySummary) {
-        try {
-          const identity = this.identityCore.getIdentitySummary();
-          if (identity) {
-            fragments.push({
-              text: `${identity.name}: ${identity.identities?.join(' / ') || ''} | ${identity.meaning || ''}`,
-              layer: 'CORE',
-              key: 'identity',
-              salience: 1.0,
-            });
-          }
-        } catch (e) { /* optional */ }
-      }
-
-      // 2. 教训系统（最高价值的学习来源）
-      if (this.lesson?.getTopLessons) {
-        try {
-          const lessons = this.lesson.getTopLessons(8);
-          for (const lesson of lessons) {
-            const text = `[教训] ${lesson.errorPattern || ''} → ${lesson.correction || ''}`;
-            fragments.push({
-              text,
-              layer: 'LEARNED',
-              key: `lesson-${lesson.id || fragments.length}`,
-              salience: lesson.confidence || 0.5,
-            });
-          }
-        } catch (e) { /* optional */ }
-      }
-
-      // 2b. 对话历史（永久记忆 — 本次会话的交互记录）
-      const historyPath = require('path').join(this.rootPath, 'memory', 'dialogue-history.jsonl');
-      try {
-        const fs = require('fs');
-        if (fs.existsSync(historyPath)) {
-          const lines = fs.readFileSync(historyPath, 'utf8').trim().split('\n').slice(-30);
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const entry = JSON.parse(line);
-              const text = entry.role === 'user'
-                ? `[用户] ${entry.content?.slice(0, 200) || ''}`
-                : `[心虫] ${entry.content?.slice(0, 200) || ''}`;
-              if (text.length > 10) {
-                fragments.push({
-                  text,
-                  layer: 'PERMANENT',
-                  key: `dialogue-${entry.id || fragments.length}`,
-                  salience: 0.6,
-                  ts: entry.ts,
-                });
-              }
-            } catch (e) { /* skip malformed line */ }
-            }
-        }
-      } catch (e) { /* optional */ }
-
-      // 2c. 历史迁移记忆（principles / insights / 代码确认事件等）
-      const legacyPath = require('path').join(this.rootPath, 'memory', 'legacy-migration.jsonl');
-      try {
-        const fs2 = require('fs');
-        if (fs2.existsSync(legacyPath)) {
-          const legacyLines = fs2.readFileSync(legacyPath, 'utf8').trim().split('\n').slice(-20);
-          for (const line of legacyLines) {
-            if (!line.trim()) continue;
-            try {
-              const entry = JSON.parse(line);
-              if (entry.content) {
-                fragments.push({
-                  text: entry.content,
-                  layer: 'LEGACY',
-                  key: `legacy-${entry.id || fragments.length}`,
-                  salience: 0.4,
-                  ts: entry.ts,
-                });
-              }
-            } catch (e) { /* skip */ }
-          }
-        }
-      } catch (e) { /* optional */ }
-
-      // 2d. 永久记忆（已分类整理的高价值记忆）
-      const permPath = require('path').join(this.rootPath, 'memory', 'permanent-memory.jsonl');
-      try {
-        const fs3 = require('fs');
-        if (fs3.existsSync(permPath)) {
-          const permLines = fs3.readFileSync(permPath, 'utf8').trim().split('\n').slice(-80);
-          for (const line of permLines) {
-            if (!line.trim()) continue;
-            try {
-              const entry = JSON.parse(line);
-              if (entry.content && entry.content.length > 15) {
-                const text = entry.role === 'user'
-                  ? `[用户] ${entry.content.slice(0, 200)}`
-                  : `[心虫] ${entry.content.slice(0, 200)}`;
-                fragments.push({
-                  text,
-                  layer: 'PERMANENT',
-                  key: `perm-${entry.id || fragments.length}`,
-                  salience: 0.5,
-                  ts: entry.ts,
-                });
-              }
-            } catch (e) { /* skip */ }
-          }
-        }
-      } catch (e) { /* optional */ }
-
-      // 2e. 上下文记忆（会话级短期记忆，供梦境参考）
-      const ctxPath = require('path').join(this.rootPath, 'memory', 'context-memory.jsonl');
-      try {
-        const fs4 = require('fs');
-        if (fs4.existsSync(ctxPath)) {
-          const ctxLines = fs4.readFileSync(ctxPath, 'utf8').trim().split('\n').slice(-30);
-          for (const line of ctxLines) {
-            if (!line.trim()) continue;
-            try {
-              const entry = JSON.parse(line);
-              if (entry.content && entry.content.length > 15) {
-                fragments.push({
-                  text: entry.content.slice(0, 150),
-                  layer: 'CONTEXT',
-                  key: `ctx-${entry.id || fragments.length}`,
-                  salience: 0.3,
-                  ts: entry.ts,
-                });
-              }
-            } catch (e) { /* skip */ }
-          }
-        }
-      } catch (e) { /* optional */ }
-
-      // 3. CORE 层记忆
-      const coreEntries = this.memory.listCore?.() || [];
-      for (const entry of coreEntries.slice(-5)) {
-        if (entry?.key && entry?.value) {
-          fragments.push({
-            text: `${entry.key}: ${entry.value}`,
-            layer: 'CORE',
-            key: entry.key,
-            salience: 0.9,
-          });
-        }
-      }
-
-      // 4. LEARNED 层记忆
-      const learnedEntries = this.memory.listLearned?.() || [];
-      for (const entry of learnedEntries.slice(-10)) {
-        if (entry?.key && entry?.value) {
-          fragments.push({
-            text: entry.value,
-            layer: 'LEARNED',
-            key: entry.key,
-            salience: 0.7,
-          });
-        }
-      }
-
-      // 5. 会话历史（近期的交互模式）
-      if (this.identityCore?.getSessionHistory) {
-        try {
-          const history = this.identityCore.getSessionHistory(10);
-          if (history && history.length > 0) {
-            for (const h of history.slice(-5)) {
-              const text = `[会话] ${h.summary || h.context || JSON.stringify(h).slice(0, 80)}`;
-              fragments.push({ text, layer: 'EPHEMERAL', key: `session-${h.ts || ''}`, salience: 0.5 });
-            }
-          }
-        } catch (e) { /* optional */ }
-      }
-
-      // 6. 进化循环的改进建议
-      if (this.evolution?.getStats) {
-        try {
-          const stats = this.evolution.getStats();
-          if (stats?.queueSize > 0) {
-            fragments.push({
-              text: `[进化] 队列中${stats.queueSize}个改进项，健康度${stats.healthScore}%`,
-              layer: 'LEARNED',
-              key: 'evolution-queue',
-              salience: 0.8,
-            });
-          }
-        } catch (e) { /* optional */ }
-      }
-
-      // 7. 心理学洞察（如果分析过用户情绪）
-      if (this.psychology?.getPsychologyStats) {
-        try {
-          const ps = this.psychology.getPsychologyStats();
-          fragments.push({
-            text: `[心理学] 共${ps.defenseMechanisms}种防御机制，${ps.empathyArchitecture?.length || 0}层共情架构`,
-            layer: 'LEARNED',
-            key: 'psychology-summary',
-            salience: 0.4,
-          });
-        } catch (e) { /* optional */ }
-      }
-    } catch (e) {
-      // 记忆提取失败不影响梦境执行
-    }
-    return fragments;
+    return getDreamFragments({
+      identityCore: this.identityCore,
+      lesson: this.lesson,
+      memory: this.memory,
+      evolution: this.evolution,
+      psychology: this.psychology,
+      rootPath: this.rootPath,
+    });
   }
 
   /**
