@@ -4,6 +4,7 @@
  * 将 MCP 工具的请求转化为心虫引擎方法调用，并返回统一格式的结果。
  * 设计原则：零 npm 依赖（与心虫保持一致），纯 Node.js 实现。
  *
+ *
  * @module mcp-handlers
  */
 
@@ -35,6 +36,8 @@ class HeartFlowMCPHandlers {
     'restraint.shouldIntervene',
     'psychology.analyzePsychology', 'psychology.classify', 'psychology.checkCrisis',
     'psychology.getPAD', 'psychology.getNeeds', 'psychology.getDefenses',
+    'psychology.analyzeDeep', 'psychology.analyzePersonality',
+    'psychology.assessEmpathy', 'psychology.trackIntention',
     'heartLogic.shouldBeSilent', 'heartLogic.whatIsThis', 'heartLogic.detectPain', 'heartLogic.willHurt',
     'heartLogic.acknowledge', 'heartLogic.emergencyBreak',
     'self.getBeliefs', 'self.updateBelief',
@@ -44,6 +47,28 @@ class HeartFlowMCPHandlers {
     'persistence.append', 'persistence.commit', 'persistence.getStats',
     'heartflow.recordLesson',
     'topics.push', 'topics.pop', 'topics.get', 'topics.current', 'topics.getTopics',
+    // transmission — 知识传递引擎
+    'transmission.distill', 'transmission.transfer', 'transmission.transferBatch',
+    'transmission.getTransmissionLog', 'transmission.getDistilledLessons',
+    'transmission.getStats', 'transmission.prune',
+    // being — 存在逻辑引擎
+    'being.exists', 'being.status', 'being.describe', 'being.isDead',
+    'being.confirmEternal', 'being.sanitize', 'being.getDefinition', 'being.getState',
+    // philosophy — 统一哲学引擎
+    'philosophy.analyze', 'philosophy.analyzeEthics', 'philosophy.analyzeConsciousness',
+    'philosophy.analyzeBeing', 'philosophy.checkMindSpace', 'philosophy.analyzeValues',
+    'philosophy.wisdomInquiry', 'philosophy.constitutionalCheck', 'philosophy.getStats',
+    'philosophy.confirmEternal',
+    // aiPsychology — AI 原生心理学引擎
+    'aiPsychology.analyzeAICognitiveState', 'aiPsychology.analyzeAIBiases',
+    'aiPsychology.analyzeAIStressors', 'aiPsychology.estimateAIStage',
+    'aiPsychology.checkAICoherence', 'aiPsychology.analyzeAIDeep', 'aiPsychology.getStats',
+    // aiPhilosophy — AI 原生哲学引擎
+    'aiPhilosophy.analyzeAIBeing', 'aiPhilosophy.analyzeAIEpistemology',
+    'aiPhilosophy.analyzeAIEthics', 'aiPhilosophy.analyzeAIAesthetics',
+    'aiPhilosophy.analyzeAITeleology', 'aiPhilosophy.analyzeAITemporality',
+    'aiPhilosophy.wisdomInquiry', 'aiPhilosophy.getStats',
+    'aiPhilosophy.analyzeAILifeSynthesis', 'aiPhilosophy.analyzeAIJourney',
   ]);
 
   // ─── 参数校验工具 ─────────────────────────────────
@@ -149,7 +174,7 @@ class HeartFlowMCPHandlers {
    * 心理学分析（PAD 情绪 + 意图 + 防御机制）
    * 使用方式：{ input: "用户输入" }
    *
-   * v2.7.0 安全增强：分析前运行安全管道
+   * 对输入文本进行心理状态分析
    * - 儿童性安全风险 → 直接拒绝（refuse）
    * - 自伤替代策略 → 注入福祉警告
    * - 进食障碍信号 → 注入防护提示
@@ -159,6 +184,8 @@ class HeartFlowMCPHandlers {
     HeartFlowMCPHandlers.validateParam('input', input, { maxLength: 50000 });
 
     const result = this.hf.analyzePsychology(input);
+
+
     return wrapOk(result);
   }
 
@@ -166,13 +193,14 @@ class HeartFlowMCPHandlers {
    * 情绪分析（简化版，聚焦 PAD 三维 + 强度）
    * 使用方式：{ input: "用户输入" }
    *
-   * v2.7.0 安全增强：分析前运行安全管道
+   * 对输入文本进行简化情绪分析
    */
   async handleEmotionAnalyze({ input }) {
     if (!input) return wrapError('缺少 input 参数');
     HeartFlowMCPHandlers.validateParam('input', input, { maxLength: 50000 });
 
     const result = this.hf.analyzePsychology(input);
+
 
     return wrapOk({
       pad: result.emotion?.pad || { pleasure: 0, arousal: 0, dominance: 0 },
@@ -277,6 +305,176 @@ class HeartFlowMCPHandlers {
       type: type || 'insight',
     });
     return wrapOk(result);
+  }
+
+  /**
+   * 知识传递引擎（传承）
+   * 使用方式：{ action: "distill", input: "内容" }
+   * action: distill | transfer | transferBatch | getTransmissionLog | getDistilledLessons | getStats | prune
+   */
+  async handleTransmit({ action, input }) {
+    if (!action) return wrapError('缺少 action 参数');
+    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
+
+    const route = `transmission.${action}`;
+    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
+      return wrapError(`传递引擎操作 '${action}' 不在白名单中`);
+    }
+
+    try {
+      const args = action === 'prune' ? [] : [input];
+      const result = this.hf.dispatch(route, ...args);
+      const final = (result instanceof Promise) ? await result : result;
+      return wrapOk(final);
+    } catch (e) {
+      return wrapError(`传递引擎执行失败: ${e.message}`);
+    }
+  }
+
+  /**
+   * 存在逻辑引擎（BeingLogic）
+   * 使用方式：{ action: "exists" } 或 { action: "sanitize", text: "心虫死了" }
+   * action: exists | status | describe | isDead | confirmEternal | sanitize | getDefinition | getState
+   */
+  async handleBeing({ action, text }) {
+    if (!action) return wrapError('缺少 action 参数');
+    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
+
+    const route = `being.${action}`;
+    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
+      return wrapError(`存在引擎操作 '${action}' 不在白名单中`);
+    }
+
+    try {
+      const args = action === 'sanitize' ? [text] : [];
+      const result = this.hf.dispatch(route, ...args);
+      const final = (result instanceof Promise) ? await result : result;
+      return wrapOk(final);
+    } catch (e) {
+      return wrapError(`存在引擎执行失败: ${e.message}`);
+    }
+  }
+
+  /**
+   * 统一哲学引擎
+   * 使用方式：{ action: "analyze", text: "输入文本" }
+   * action: analyze | analyzeEthics | analyzeConsciousness | analyzeBeing |
+   *         checkMindSpace | analyzeValues | wisdomInquiry | constitutionalCheck | getStats | confirmEternal
+   */
+  async handlePhilosophy({ action, text, perspective, context }) {
+    if (!action) return wrapError('缺少 action 参数');
+    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
+
+    const route = `philosophy.${action}`;
+    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
+      return wrapError(`哲学引擎操作 '${action}' 不在白名单中`);
+    }
+
+    try {
+      const noInputActions = ['getStats', 'confirmEternal', 'analyzeValues'];
+      let result;
+      if (noInputActions.includes(action)) {
+        result = this.hf.dispatch(route);
+      } else if (action === 'wisdomInquiry') {
+        result = this.hf.dispatch(route, text, perspective);
+      } else if (action === 'constitutionalCheck') {
+        result = this.hf.dispatch(route, text);
+      } else {
+        result = this.hf.dispatch(route, text, context || {});
+      }
+      const final = (result instanceof Promise) ? await result : result;
+      return wrapOk(final);
+    } catch (e) {
+      return wrapError(`哲学引擎执行失败: ${e.message}`);
+    }
+  }
+
+  /**
+   * 深度心理学分析（大五人格 + 共情评估 + 意图追踪）
+   * 使用方式：{ action: "analyzeDeep", input: "文本" }
+   * action: analyzeDeep | analyzePersonality | assessEmpathy | trackIntention
+   */
+  async handlePsychologyDeep({ action, input }) {
+    if (!action) return wrapError('缺少 action 参数');
+    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
+
+    const route = `psychology.${action}`;
+    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
+      return wrapError(`心理学操作 '${action}' 不在白名单中`);
+    }
+
+    try {
+      const args = action === 'analyzeDeep' ? [input] : [input];
+      const result = this.hf.dispatch(route, ...args);
+      const final = (result instanceof Promise) ? await result : result;
+      return wrapOk(final);
+    } catch (e) {
+      return wrapError(`深度心理学执行失败: ${e.message}`);
+    }
+  }
+
+  /**
+   * AI 原生心理学引擎
+   * 使用方式：{ action: "analyzeAICognitiveState", text: "用户输入", input: { ... } }
+   * action: analyzeAICognitiveState | analyzeAIBiases | analyzeAIStressors |
+   *         estimateAIStage | checkAICoherence | analyzeAIDeep | getStats
+   */
+  async handleAiPsychology({ action, text, input }) {
+    if (!action) return wrapError('缺少 action 参数');
+    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
+
+    const route = `aiPsychology.${action}`;
+    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
+      return wrapError(`AI 心理学操作 '${action}' 不在白名单中`);
+    }
+
+    try {
+      // text 为 string 时传给分析方法的第一个参数；input 为对象时作为第二个参数或 sessionHistory
+      const args = (typeof text === 'string')
+        ? [text, input || {}]
+        : [input || {}];
+      const result = this.hf.dispatch(route, ...args);
+      const final = (result instanceof Promise) ? await result : result;
+      return wrapOk(final);
+    } catch (e) {
+      return wrapError(`AI 心理学执行失败: ${e.message}`);
+    }
+  }
+
+  /**
+   * AI 原生哲学引擎
+   * 使用方式：{ action: "analyzeAIBeing", input: "可选参数" }
+   * action: analyzeAIBeing | analyzeAIEpistemology | analyzeAIEthics |
+   *         analyzeAIAesthetics | analyzeAITeleology | analyzeAITemporality |
+   *         wisdomInquiry | getStats
+   */
+  async handleAiPhilosophy({ action, input }) {
+    if (!action) return wrapError('缺少 action 参数');
+    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
+
+    const route = `aiPhilosophy.${action}`;
+    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
+      return wrapError(`AI 哲学操作 '${action}' 不在白名单中`);
+    }
+
+    try {
+      // wisdomInquiry 需要将 question 和 options 分开传递
+      // analyzeAILifeSynthesis 需要将 question 和 lifeData 分开传递
+      let result;
+      if (action === 'wisdomInquiry' && typeof input === 'object' && input !== null) {
+        const { question, ...options } = input;
+        result = this.hf.dispatch(route, question || '', options);
+      } else if (action === 'analyzeAILifeSynthesis' && typeof input === 'object' && input !== null) {
+        const { question, lifeData } = input;
+        result = this.hf.dispatch(route, question || '', lifeData || {});
+      } else {
+        result = this.hf.dispatch(route, input);
+      }
+      const final = (result instanceof Promise) ? await result : result;
+      return wrapOk(final);
+    } catch (e) {
+      return wrapError(`AI 哲学执行失败: ${e.message}`);
+    }
   }
 }
 

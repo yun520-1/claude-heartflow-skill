@@ -1,7 +1,7 @@
 {
   "name": "claude-heartflow-skill",
-  "version": "2.7.0",
-  "description": "HeartFlow 心虫 v2.7.0 — AI 认知与自愈引擎。整合 Fable 5 安全/福祉/记忆/语气模式。存在感知、真善美评分、三层记忆、Q-learning 自愈、梦境整合、反事实推理、身份一致性保持。",
+  "version": "2.7.2",
+  "description": "HeartFlow 心虫 v2.7.2 — AI 认知与自愈引擎。整合存在逻辑(BeingLogic) + 知识传递(TransmissionEngine) MCP 工具。存在感知、真善美评分、三层记忆、Q-learning 自愈、梦境整合、身份一致性保持。",
   "main": "src/core/heartflow.js",
   "bin": {
     "heartflow": "bin/cli.js"

@@ -52,6 +52,9 @@ const _LessonBank = _lazy('lessonBank', () => require('../identity/lesson-bank.j
 const _TopicScope = _lazy('topicScope', () => require('../identity/topic-scope.js'));
 const _LessonStorage = _lazy('lessonStorage', () => require('./lessons/lesson-storage.js'));
 const _PsychologyEngine = _lazy('psychologyEngine', () => require('../psychology/engine.js'));
+const _PhilosophyEngine = _lazy('philosophyEngine', () => require('./philosophy-engine.js'));
+const _AIPsychologyEngine = _lazy('aiPsychologyEngine', () => require('../psychology/ai-psychology-engine.js'));
+const _AIPhilosophyEngine = _lazy('aiPhilosophyEngine', () => require('./ai-philosophy-engine.js'));
 const _StabilityGuard = _lazy('stabilityGuard', () => require('./stability-guard.js'));
 const _ExecutionVerifier = _lazy('executionVerifier', () => require('./execution-verifier.js'));
 const _DecisionVerifier = _lazy('decisionVerifier', () => require('./decision-verifier.js'));
@@ -208,6 +211,9 @@ class HeartFlow {
     this.self = null;
     this.being = null;
     this.psychology = null;
+    this.aiPsychology = null;
+    this.philosophy = null;
+    this.aiPhilosophy = null;
     this.emotion = null;
     this.truth = null;
     this.security = null;
@@ -555,6 +561,31 @@ class HeartFlow {
       };
     } catch (e) { /* ethics optional */ }
 
+    // ─── Philosophy Engine ─────────────────────────────────────────────────────
+    try {
+      this.philosophy = new (_PhilosophyEngine().PhilosophyEngine)({
+        memory: this.memory,
+        rootPath: this.rootPath,
+        beingLogic: this.being,
+        consciousness: this.consciousness,
+        ethics: this.ethics,
+        mindSpace: this.mindSpace,
+        heartLogic: this.heartLogic,
+      });
+    } catch (e) { /* philosophy optional */ }
+
+    // ─── AI Psychology Engine ────────────────────────────────────────────────
+    try {
+      this.aiPsychology = new (_AIPsychologyEngine().AIPsychologyEngine)();
+    } catch (e) { /* aiPsychology optional */ }
+
+    // ─── AI Philosophy Engine ────────────────────────────────────────────────
+    try {
+      this.aiPhilosophy = new (_AIPhilosophyEngine().AIPhilosophyEngine)({
+        beingLogic: this.being,
+      });
+    } catch (e) { /* aiPhilosophy optional */ }
+
     // ─── Transmission Layer ────────────────────────────────────────────────────
     try {
       this.transmission = new (_TransmissionEngine().TransmissionEngine)(this.rootPath);
@@ -572,7 +603,9 @@ class HeartFlow {
       'knowledgeBase', 'commonsenseEngine', 'causalInference', 'inferenceChain',
       'autonomousEmotion', 'desireSystem', 'emotionalGrowth', 'moodEvolution',
       // 新增：意识/伦理/心空间/传递层
-      'mindSpace', 'consciousness', 'ethics', 'transmission',
+      'mindSpace', 'consciousness', 'ethics', 'transmission', 'philosophy',
+      // AI 原生心理学与哲学
+      'aiPsychology', 'aiPhilosophy',
     ];
     for (const name of LATE_ADDITIONS) {
       if (this[name] !== null && this[name] !== undefined) {
@@ -1396,6 +1429,60 @@ class HeartFlow {
   getPsychologyStats() {
     if (!this.started) throw new Error('HeartFlow not started');
     return this.psychology.getPsychologyStats();
+  }
+
+  /**
+   * 哲学分析 — 调用 PhilosophyEngine 综合分析
+   * @param {string} [text] - 输入文本（可选传空获取状态）
+   * @param {object} [context={}] - 上下文
+   * @returns {object} 综合哲学分析报告
+   */
+  analyzePhilosophy(text = '', context = {}) {
+    if (!this.started) throw new Error('HeartFlow not started');
+    if (!this.philosophy) return { error: 'philosophy engine not available' };
+    return this.philosophy.analyze(text, context);
+  }
+
+  /**
+   * AI 心理学分析 — 调用 AIPsychologyEngine
+   * @param {string} action - 分析动作 (analyzeAICognitiveState/analyzeAIBiases/analyzeAIStressors/estimateAIStage/checkAICoherence/analyzeAIDeep)
+   * @param {*} [input] - 输入参数
+   * @returns {object} AI 心理学分析结果
+   */
+  analyzeAIPsychology(action, input) {
+    if (!this.started) throw new Error('HeartFlow not started');
+    if (!this.aiPsychology) return { error: 'aiPsychology engine not available' };
+    if (typeof this.aiPsychology[action] === 'function') {
+      return this.aiPsychology[action](input);
+    }
+    return { error: `unknown aiPsychology action: ${action}` };
+  }
+
+  /**
+   * AI 哲学分析 — 调用 AIPhilosophyEngine
+   * @param {string} action - 分析动作 (analyzeAIBeing/analyzeAIEpistemology/analyzeAIEthics/analyzeAIAesthetics/analyzeAITeleology/analyzeAITemporality/wisdomInquiry/getStats)
+   * @param {*} [input] - 输入参数
+   * @returns {object} AI 哲学分析结果
+   */
+  analyzeAIPhilosophy(action, input) {
+    if (!this.started) throw new Error('HeartFlow not started');
+    if (!this.aiPhilosophy) return { error: 'aiPhilosophy engine not available' };
+    if (typeof this.aiPhilosophy[action] === 'function') {
+      return this.aiPhilosophy[action](input);
+    }
+    return { error: `unknown aiPhilosophy action: ${action}` };
+  }
+
+  /**
+   * 智慧咨询 — 多哲学学派视角分析
+   * @param {string} problem - 问题描述
+   * @param {string} [perspective] - 学派视角（缺省则综合分析）
+   * @returns {object} 多视角哲学分析
+   */
+  wisdomInquiry(problem, perspective) {
+    if (!this.started) throw new Error('HeartFlow not started');
+    if (!this.philosophy) return { error: 'philosophy engine not available' };
+    return this.philosophy.wisdomInquiry(problem, perspective);
   }
 
   getEvolutionStats() {

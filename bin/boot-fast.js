@@ -22,7 +22,7 @@ const fs = require('fs');
 
 const ROOT = path.resolve(__dirname, '..');
 const CACHE_PATH = path.join(ROOT, 'memory', 'boot-cache.json');
-const VERSION = '2.6.5';
+const VERSION = '2.7.0';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24小时
 
 // ─── CLI 参数解析 ─────────────────────────────────

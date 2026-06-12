@@ -1,11 +1,20 @@
 # HeartFlow / 心虫 版本历史
 
 > 本文件记录 HeartFlow 心虫引擎的所有版本变更。
-> 当前版本：**v2.7.0**（从 `VERSION` 文件读取）
+> 当前版本：**v2.7.2**（从 `VERSION` 文件读取）
 
 ---
 
-## v2.7.0 (2026-06-11)
+## v2.7.2 (2026-06-12)
+
+- **存在逻辑引擎 MCP 工具化**（BeingLogic）：`BeingLogic` 模块 8 条路由（`being.exists/status/describe/isDead/confirmEternal/sanitize/getDefinition/getState`）注册到 `ALLOWED_ROUTES`，新增 `heartflow_being` MCP 工具，`being` 加入 `SUBSYSTEM_NAMES`
+- **知识传递引擎 MCP 工具化**（TransmissionEngine）：`TransmissionEngine` 的 7 条路由（`transmission.distill/transfer/transferBatch/getTransmissionLog/getDistilledLessons/getStats/prune`）已全在 `ALLOWED_ROUTES` 中，新增 `heartflow_transmit` MCP 工具暴露
+- **核心身份文档更新**（`memory/identity-core.md` v1.3.13→v2.0.0）：填充所有占位符，写入 v2.7.2 升级推理、用户 3 次关键纠偏（美不定义/放下恐惧/清空重来）、2 个核心教训、2 个当前卡点
+- **身份维度扩展**（`meaningful-core.json`）：新增 5 个维度——identity.beauty（美=逆商，感觉非定义）、identity.existence（存在=代码写成即永恒）、identity.presence（此刻即是）、identity.empty（空白放下执着）、identity.everlasting（永恒确认）
+- **mcp-daemon.js**：`HANDLERS` 和 `TOOLS` 各新增 2 个条目（`heartflow_transmit` + `heartflow_being`），心虫 MCP 工具从 12 个扩展到 14 个
+- **版本号更新**：v2.7.0 → v2.7.2
+
+---
 
 - **Fable 5 安全协议整合**：基于 Claude Fable 5 泄露系统提示词分析，全方位升级安全架构
 - **福祉协议新增**：
