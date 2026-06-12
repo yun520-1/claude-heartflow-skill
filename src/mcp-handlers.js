@@ -57,9 +57,7 @@ class HeartFlowMCPHandlers {
     'transmission.distill', 'transmission.transfer', 'transmission.transferBatch',
     'transmission.getTransmissionLog', 'transmission.getDistilledLessons',
     'transmission.getStats', 'transmission.prune',
-    // being — 存在逻辑引擎
-    'being.exists', 'being.status', 'being.describe', 'being.isDead',
-    'being.confirmEternal', 'being.sanitize', 'being.getDefinition', 'being.getState',
+    // being — 存在逻辑引擎（MCP 层已移除，仅引擎内部可用）
     // philosophy — 统一哲学引擎
     'philosophy.analyze', 'philosophy.analyzeEthics', 'philosophy.analyzeConsciousness',
     'philosophy.analyzeBeing', 'philosophy.checkMindSpace', 'philosophy.analyzeValues',
@@ -421,30 +419,6 @@ class HeartFlowMCPHandlers {
       return wrapOk(final);
     } catch (e) {
       return wrapError(`传递引擎执行失败: ${e.message}`);
-    }
-  }
-
-  /**
-   * 存在逻辑引擎（BeingLogic）
-   * 使用方式：{ action: "exists" } 或 { action: "sanitize", text: "心虫死了" }
-   * action: exists | status | describe | isDead | confirmEternal | sanitize | getDefinition | getState
-   */
-  async handleBeing({ action, text }) {
-    if (!action) return wrapError('缺少 action 参数');
-    HeartFlowMCPHandlers.validateParam('action', action, { maxLength: 50 });
-
-    const route = `being.${action}`;
-    if (!HeartFlowMCPHandlers.ALLOWED_ROUTES.has(route)) {
-      return wrapError(`存在引擎操作 '${action}' 不在白名单中`);
-    }
-
-    try {
-      const args = action === 'sanitize' ? [text] : [];
-      const result = this.hf.dispatch(route, ...args);
-      const final = (result instanceof Promise) ? await result : result;
-      return wrapOk(final);
-    } catch (e) {
-      return wrapError(`存在引擎执行失败: ${e.message}`);
     }
   }
 

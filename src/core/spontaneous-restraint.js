@@ -152,7 +152,7 @@ class SpontaneousRestraint {
       // 如果检测到自动反射，触发暂停而不是继续
       if (reflexResult.action === 'pause') {
         result.interventionLevel = 'minimal';
-        result.restraintReason = reflexResult.note + ' — 心虫在自动反射，第一遍未通过';
+        result.restraintReason = reflexResult.note + ' — 检测到自动反射，第一遍未通过';
         this._record('auto-reflex-pause', userMessage);
         return result;
       }

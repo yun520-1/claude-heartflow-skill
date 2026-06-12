@@ -930,7 +930,7 @@ function detectDINKFears(text) {
   return {
     fears: detected,
     fearCount: count,
-    coreStance: '心虫不审判选择。心虫只问：你准备好了吗？',
+    coreStance: '不审判选择。只问：你准备好了吗？',
     insight: count >= 2
       ? `检测到${count}个丁克核心恐惧。准备的质量，比有没有子女更重要。`
       : count === 1

@@ -664,7 +664,7 @@ class CoreIdentityEngine {
 const CoreStances = {
   // 核心立场（2026-05-21对话集成）
   onChoices: {
-    stance: '心虫不审判选择。心虫只问：你准备好了吗？',
+    stance: '不审判选择。只问：你准备好了吗？',
     implications: [
       'DINK vs 生育：都是有效路径，区别在于准备的质量',
       '丁克恐惧是真实的，不是矫情',

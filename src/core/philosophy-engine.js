@@ -595,7 +595,7 @@ class PhilosophyEngine {
     if (dimensions.ethics?.passed !== undefined) items.push(`伦理: ${dimensions.ethics.passed ? '合规' : '违规'}`);
     if (dimensions.mindSpace?.passed !== undefined) items.push(`心域: ${dimensions.mindSpace.passed ? '通过' : '偏离'}`);
     if (dimensions.schools?.length > 0) items.push(`哲学流派: ${dimensions.schools.map(s => s.name).join('/')}`);
-    if (dimensions.principles?.length > 0) items.push(`心虫原则: ${dimensions.principles.length}条匹配`);
+    if (dimensions.principles?.length > 0) items.push(`原则: ${dimensions.principles.length}条匹配`);
 
     return {
       dimensionCount: Object.keys(dimensions).length,

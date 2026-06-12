@@ -1,0 +1,258 @@
+#!/usr/bin/env node
+/**
+ * hf — HeartFlow CLI 工具（直接 Socket 通信）
+ *
+ * 绕过 MCP 注册问题，通过 Unix Socket 直接调用心虫引擎守护进程。
+ * 适用于当前 bridge 环境下 MCP 注册不工作的场景。
+ *
+ * 用法:
+ *   hf heartflow_status                            # 健康检查
+ *   hf heartflow_think '{"input":"人生的意义是什么","depth":3}'  # 推理
+ *   hf heartflow_dream '{"force":true}'             # 梦境生成
+ *   hf --list                                        # 列出所有可用工具
+ *   hf --help                                        # 帮助信息
+ *
+ * 设计: 无依赖，仅使用 Node.js 内置 net 模块，直接与 daemon socket 通信。
+ */
+
+const net = require('net');
+
+const SOCKET_PATH = '/tmp/heartflow-mcp.sock';
+const TIMEOUT_MS = 30000; // 30 秒超时
+
+// ─── 工具列表 ────────────────────────────────────────────
+const TOOLS = [
+  { name: 'heartflow_think',          desc: '完整思维链推理（depth 1-4）' },
+  { name: 'heartflow_think_fast',     desc: '快速推理（depth=1）' },
+  { name: 'heartflow_think_deep',     desc: '深度推理（depth=4）' },
+  { name: 'heartflow_dream',          desc: '梦境生成与整合' },
+  { name: 'heartflow_memory_search',  desc: '跨层记忆检索' },
+  { name: 'heartflow_psychology_analyze', desc: 'PAD 三维情绪 + 意图 + 防御机制分析' },
+  { name: 'heartflow_emotion_analyze',    desc: '简化情绪分析' },
+  { name: 'heartflow_self_heal',      desc: 'Q-learning 自愈策略推荐' },
+  { name: 'heartflow_verify_reasoning',  desc: '验证推理结论的自洽性' },
+  { name: 'heartflow_status',         desc: '引擎健康检查' },
+  { name: 'heartflow_dispatch',       desc: '通用路由调用' },
+  { name: 'heartflow_record_lesson',  desc: '记录教训到 LessonBank' },
+  { name: 'heartflow_transmit',       desc: '知识传递引擎' },
+  { name: 'heartflow_being',          desc: '存在逻辑引擎' },
+  { name: 'heartflow_philosophy',     desc: '统一哲学引擎' },
+  { name: 'heartflow_psychology_deep',desc: '深度心理学分析' },
+  { name: 'heartflow_ai_psychology',  desc: 'AI 心理学分析' },
+  { name: 'heartflow_ai_philosophy',  desc: 'AI 哲学分析' },
+];
+
+// ─── Socket JSON-RPC 通信 ────────────────────────────────
+class RPCClient {
+  constructor(socket) {
+    this.socket = socket;
+    this.buffer = '';
+    this.pending = new Map();
+    this.nextId = 1;
+    this._closed = false;
+
+    socket.on('data', (chunk) => {
+      this.buffer += chunk.toString('utf8');
+      const lines = this.buffer.split('\n');
+      this.buffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const resp = JSON.parse(trimmed);
+          const promise = this.pending.get(resp.id);
+          if (promise) {
+            this.pending.delete(resp.id);
+            if (resp.error) promise.reject(new Error(`JSON-RPC 错误 [${resp.error.code}]: ${resp.error.message}`));
+            else promise.resolve(resp.result);
+          }
+        } catch (e) { /* 忽略解析错误 */ }
+      }
+    });
+
+    socket.on('close', () => { this._closed = true; });
+    socket.on('error', () => {});
+  }
+
+  async call(method, params = {}) {
+    if (this._closed) throw new Error('连接已关闭');
+    const id = this.nextId++;
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.socket.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
+    });
+  }
+
+  async init() {
+    await this.call('initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'hf-cli', version: '2.7.2' },
+    });
+    // notifications/initialized 是 Notification（无响应），直接 write 不等
+    this.socket.write(JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'notifications/initialized',
+    }) + '\n');
+  }
+
+  async callTool(name, args = {}) {
+    const result = await this.call('tools/call', { name, arguments: args });
+    return result;
+  }
+}
+
+function createClient() {
+  return new Promise((resolve, reject) => {
+    // 先确保守护进程在运行
+    if (!isDaemonAlive()) {
+      console.error('[hf] 心虫守护进程未运行，正在启动...');
+      const { spawn } = require('child_process');
+      const path = require('path');
+      const daemonJs = path.resolve(__dirname, '..', 'daemon', 'mcp-daemon.js');
+      const child = spawn(process.execPath, [daemonJs], { detached: true, stdio: 'ignore' });
+      child.unref();
+      // 等 socket 出现（最多 10 秒）
+      let waited = 0;
+      const waitInterval = setInterval(() => {
+        waited += 500;
+        if (isDaemonAlive()) {
+          clearInterval(waitInterval);
+          setTimeout(() => doConnect(resolve, reject), 100);
+        } else if (waited > 10000) {
+          clearInterval(waitInterval);
+          try { process.kill(child.pid); } catch { /* ignore */ }
+          reject(new Error('守护进程启动超时'));
+        }
+      }, 500);
+    } else {
+      doConnect(resolve, reject);
+    }
+  });
+}
+
+function doConnect(resolve, reject) {
+  const socket = new net.Socket();
+  socket.setTimeout(TIMEOUT_MS);
+  socket.on('timeout', () => { socket.destroy(); reject(new Error('连接超时')); });
+  socket.on('error', (err) => reject(new Error(`Socket 错误: ${err.message}`)));
+  socket.connect(SOCKET_PATH, () => {
+    const client = new RPCClient(socket);
+    resolve(client);
+  });
+}
+
+// ─── 格式化输出 ───────────────────────────────────────────
+function formatOutput(result) {
+  if (result === null || result === undefined) {
+    return '（无返回值）';
+  }
+  // MCP content 格式：提取内层文本
+  if (result.content && Array.isArray(result.content)) {
+    const texts = result.content
+      .filter(c => c.type === 'text' && c.text)
+      .map(c => c.text);
+    if (texts.length === 1) return texts[0];
+    if (texts.length > 1) return texts.join('\n---\n');
+  }
+  if (typeof result === 'string') return result;
+  return JSON.stringify(result, null, 2);
+}
+
+// ─── 检测守护进程是否在运行 ──────────────────────────────
+function isDaemonAlive() {
+  try {
+    require('fs').accessSync(SOCKET_PATH);
+    return true;
+  } catch { return false; }
+}
+
+// ─── 主入口 ───────────────────────────────────────────────
+async function main() {
+  const args = process.argv.slice(2);
+
+  // --help
+  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+    console.log('用法: hf <tool_name> [参数JSON] [--raw] [--list]');
+    console.log('');
+    console.log('工具列表:');
+    for (const t of TOOLS) {
+      console.log(`  ${t.name.padEnd(30)} ${t.desc}`);
+    }
+    console.log('');
+    console.log('示例:');
+    console.log('  hf heartflow_status');
+    console.log('  hf heartflow_think \'{"input":"你好","depth":2}\'');
+    console.log('  hf heartflow_dream \'{"force":true}\'');
+    console.log('  hf --list');
+    return;
+  }
+
+  // --list
+  if (args[0] === '--list') {
+    console.log('可用工具（18 个）:');
+    for (const t of TOOLS) {
+      console.log(`  ${t.name.padEnd(30)} ${t.desc}`);
+    }
+    return;
+  }
+
+  const toolName = args[0];
+  if (!toolName) {
+    console.error('错误: 请指定工具名称');
+    process.exit(1);
+  }
+
+  // 验证工具是否存在
+  const toolDef = TOOLS.find(t => t.name === toolName);
+  if (!toolDef) {
+    console.error(`错误: 未知工具 "${toolName}"`);
+    console.error(`运行 "hf --list" 查看所有可用工具`);
+    process.exit(1);
+  }
+
+  // 解析参数 JSON
+  let params = {};
+  const rawMode = args.includes('--raw');
+  const jsonArg = args.find(a => a.startsWith('{') && a.endsWith('}'));
+  if (jsonArg) {
+    try {
+      params = JSON.parse(jsonArg);
+    } catch (e) {
+      console.error(`错误: JSON 解析失败 — ${e.message}`);
+      process.exit(1);
+    }
+  }
+
+  // 支持 key=value 格式
+  for (const arg of args.slice(1).filter(a => a.includes('=') && !a.startsWith('--'))) {
+    const [key, ...vals] = arg.split('=');
+    const val = vals.join('=');
+    // 尝试智能类型转换
+    if (val === 'true') params[key] = true;
+    else if (val === 'false') params[key] = false;
+    else if (/^\d+$/.test(val)) params[key] = parseInt(val);
+    else if (/^\d+\.\d+$/.test(val)) params[key] = parseFloat(val);
+    else params[key] = val;
+  }
+
+  try {
+    const client = await createClient();
+    await client.init();
+    const result = await client.callTool(toolName, params);
+
+    if (rawMode && typeof result === 'object') {
+      console.log(JSON.stringify(result));
+    } else {
+      console.log(formatOutput(result));
+    }
+  } catch (e) {
+    console.error(`错误: ${e.message}`);
+    process.exit(1);
+  }
+}
+
+main().catch((e) => {
+  console.error(`未捕获错误: ${e.message}`);
+  process.exit(1);
+});

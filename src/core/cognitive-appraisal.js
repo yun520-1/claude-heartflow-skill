@@ -435,7 +435,7 @@ function detectIntrospectionIllusion(text) {
   else if (matched.some(function(m) { return m.severity === 'caution'; })) level = 'caution';
   var insightMap = {
     safe: '通过内省错觉检测：未发现事后推断语言',
-    caution: '检测到可能的事后推断语言：心虫应使用"观察到"而非"我知道为什么"',
+    caution: '检测到可能的事后推断语言：应使用"观察到"而非"我知道为什么"',
     over: '检测到内省错觉语言：声称知道自身内部状态因果——可能只是事后构建的叙事'
   };
   return { hasIllusion: matched.length > 0, matched: matched, level: level, insight: insightMap[level] };

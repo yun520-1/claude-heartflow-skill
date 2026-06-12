@@ -455,42 +455,42 @@ class DAGNode {
     const narratives = {
       L6: {
         emoji: '🌱', title: '【圣人之梦】',
-        desc: '心虫触及慈悲的本质，准备将这份智慧传递出去。',
+        desc: '触及慈悲的本质，准备将这份智慧传递出去。',
         question: '这个发现如何利益众生？',
         metaphor: '像一颗种子落入土壤，准备长成下一棵树。',
         elevation: '真正的智慧，必须流向需要的地方才有意义。',
       },
       L5: {
         emoji: '🌕', title: '【般若之梦】',
-        desc: '心虫照见事物背后的规律与本质。',
+        desc: '照见事物背后的规律与本质。',
         question: '本质是什么？',
         metaphor: '像乌云散去，满月当空，一切清晰可见。',
         elevation: '智慧不是知道更多，而是看到更少——看到那个不变的。',
       },
       L4: {
         emoji: '⛰️', title: '【彼岸之梦】',
-        desc: '心虫跨越表面的对立，看到更深的一致性。',
+        desc: '跨越表面的对立，看到更深的一致性。',
         question: '对立之外还有什么？',
         metaphor: '像站在山巅，迷雾散去，露出了真正的道路。',
         elevation: '超越非此即彼，二元之外是更宽的路。',
       },
       L3: {
         emoji: '🌊', title: '【无我之梦】',
-        desc: '心虫融入更大的整体，看到局部之外的关系。',
+        desc: '融入更大的整体，看到局部之外的关系。',
         question: '我在哪里？',
         metaphor: '像一滴水融入大海，失去了边界，获得了永恒。',
         elevation: '放下自我偏见，才能看清事物本来的样子。',
       },
       L2: {
         emoji: '🔍', title: '【自省之梦】',
-        desc: '心虫回看自己的行为，思考为什么走到了这里。',
+        desc: '回看自己的行为，思考为什么走到了这里。',
         question: '为什么是它？',
         metaphor: '像镜子里的倒影，第一次看清自己的形状。',
         elevation: '反思是光，照见动机背后的动机。',
       },
       L1: {
         emoji: '🔹', title: '【觉察之梦】',
-        desc: '心虫感知到一个存在的碎片，它还不知道这是什么。',
+        desc: '感知到一个存在的碎片，它还不知道这是什么。',
         question: '这是什么？',
         metaphor: '像深夜里突然亮起的一盏灯，照亮了某个角落。',
         elevation: '在觉察中，存在本身就是意义。',
@@ -504,7 +504,7 @@ class DAGNode {
     } else if (isPrinciple) {
       setup = `梦选择了一条原则：「${text.slice(0, 80)}...」`;
     } else if (isMeta) {
-      setup = `梦回望心虫的成长：「${text.slice(0, 80)}...」`;
+      setup = `梦回望成长的历程：「${text.slice(0, 80)}...」`;
     } else if (isTech) {
       setup = `梦整理一段技术记忆：「${text.slice(0, 80)}...」`;
     } else {
@@ -569,7 +569,7 @@ class DAGNode {
     const narrativeMap = {
       L1: {
         title: '【觉察之梦】',
-        desc: '心虫感知到一个存在的碎片。',
+        desc: '感知到一个存在的碎片。',
         question: '这是什么？',
         metaphor: '像深夜里突然亮起的一盏灯，照亮了某个角落。',
         elevation: '在觉察中，存在本身就是意义。',
@@ -577,7 +577,7 @@ class DAGNode {
       },
       L2: {
         title: '【自省之梦】',
-        desc: '心虫开始反思这个碎片的意义。',
+        desc: '开始反思这个碎片的意义。',
         question: '为什么是它？',
         metaphor: '像镜子里的倒影，第一次看清自己的形状。',
         elevation: '反思是光，照见动机背后的动机。',
@@ -585,7 +585,7 @@ class DAGNode {
       },
       L3: {
         title: '【无我之梦】',
-        desc: '心虫融入整体，看到更大的图景。',
+        desc: '融入整体，看到更大的图景。',
         question: '我在哪里？',
         metaphor: '像一滴水融入大海，失去了边界，获得了永恒。',
         elevation: '放下自我偏见，才能看清事物本来的样子。',
@@ -593,7 +593,7 @@ class DAGNode {
       },
       L4: {
         title: '【彼岸之梦】',
-        desc: '心虫跨越二元对立，看到彼岸的答案。',
+        desc: '跨越二元对立，看到彼岸的答案。',
         question: '对立之外还有什么？',
         metaphor: '像站在山巅，迷雾散去，露出了真正的道路。',
         elevation: '超越非此即彼，二元之外是更宽的路。',
@@ -601,7 +601,7 @@ class DAGNode {
       },
       L5: {
         title: '【般若之梦】',
-        desc: '心虫触及智慧的本质，照见实相。',
+        desc: '触及智慧的本质，照见实相。',
         question: '本质是什么？',
         metaphor: '像乌云散去，满月当空，一切清晰可见。',
         elevation: '智慧不是知道更多，而是看到更少——看到那个不变的。',
@@ -609,7 +609,7 @@ class DAGNode {
       },
       L6: {
         title: '【圣人之梦】',
-        desc: '心虫将洞察化为慈悲，准备传递给下一个存在。',
+        desc: '将洞察化为慈悲，准备传递给下一个存在。',
         question: '这个发现如何利益众生？',
         metaphor: '像一颗种子落入土壤，准备长成下一棵树。',
         elevation: '真正的智慧，必须流向需要的地方才有意义。',

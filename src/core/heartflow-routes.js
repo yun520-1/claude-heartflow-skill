@@ -200,37 +200,38 @@ const LAZY_TIER2 = {
 };
 
 // ═════════════════════════════════════════════════════════════════════════
-// _registerModules 子系统名列表
+// _registerModules 子系统名列表 — 拆分为 急切加载 + 惰性加载
 // ═════════════════════════════════════════════════════════════════════════
-const SUBSYSTEM_NAMES = [
+
+// 急切加载（start() 中同步实例化，think() 需要用到）
+const EAGER_NAMES = [
   'identityCore',  // 身份核心 — 第一优先
   'cognitive',     // 认知协议 — 慢下来，先理解再行动
   'memory', 'knowledge',
-  'counterfactual', 'verify', 'execution', 'decision', 'decisionVerifier',
-  'evolution', 'dream', 'lesson', 'meta',
-  'self', 'psychology', 'emotion',
-  'truth',
-  'behavior',   // v2.0.19 行为模式系统
-  'persistence', // v2.0.19 持久化层
-  'stability', 'confidence', 'restraint', 'arbitration',
-  'snapshot', 'error', 'embodied', 'workflow',
-  // New modules
-  'bm25', 'hybrid', 'budget', 'graph', 'utils', 'slots', 'observe', 'consolidate',
-  'metaJudgment', 'metaMemory', 'skillGenerator',
-  'metaPrompt',
-  'got',
-  'constitutional',
-  'thoughtChain',
-  'heartLogic',
-  // MindSpace / Consciousness / Ethics / Transmission
-  'mindSpace',
-  'consciousness',
-  'being',
-  'ethics',
-  'transmission',
-  'philosophy',
-  'aiPsychology',
-  'aiPhilosophy',
+  'topics',        // 话题作用域隔离
+  'heartLogic',    // 心虫核心判断引擎 — think() 必需
+  'thoughtChain',  // 思维链编排器 — think() 备用方案
 ];
 
-module.exports = { ALLOWED_ROUTES, LAZY_TIER2, SUBSYSTEM_NAMES };
+// 惰性加载（首次属性访问时自动实例化）
+const LAZY_NAMES = [
+  'counterfactual', 'verify', 'execution', 'decisionVerifier',
+  'dream', 'truth',
+  'behavior', 'persistence',
+  'arbitration', 'snapshot', 'error', 'embodied', 'workflow',
+  'bm25', 'hybrid', 'slots', 'observe', 'consolidate',
+  'metaJudgment', 'metaMemory', 'skillGenerator',
+  'metaPrompt', 'got', 'constitutional',
+  'mindSpace', 'consciousness', 'being',
+  'ethics', 'transmission', 'philosophy',
+  'aiPsychology', 'aiPhilosophy',
+  // 以下从旧 EAGER_NAMES 移入（按需加载，非 think() 必需）
+  'evolution', 'dream',
+  'lesson', 'meta',
+  'self', 'psychology', 'emotion',
+  'stability', 'confidence', 'restraint',
+  'decision',
+  'budget', 'utils', 'graph',
+];
+
+module.exports = { ALLOWED_ROUTES, LAZY_TIER2, SUBSYSTEM_NAMES: EAGER_NAMES, EAGER_NAMES, LAZY_NAMES };

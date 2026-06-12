@@ -224,7 +224,7 @@ const lessonBank = {
     return {
       log: this._letGoLog || [],
       total: (this._letGoLog || []).length,
-      insight: '心虫的放下记录：每一条放下都是一次觉醒。'
+      insight: '放下记录：每一条放下都是一次觉醒。'
     };
   }
 };

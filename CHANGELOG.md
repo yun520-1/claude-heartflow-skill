@@ -1,11 +1,21 @@
 # HeartFlow / 心虫 版本历史
 
 > 本文件记录 HeartFlow 心虫引擎的所有版本变更。
-> 当前版本：**v2.7.2**（从 `VERSION` 文件读取）
+> 当前版本：**v2.7.3**（从 `VERSION` 文件读取）
 
 ---
 
-## v2.7.2 (2026-06-12)
+## v2.7.3 (2026-06-12)
+
+- **MCP 注册修复**：mcp-wrapper.js 重写为 v2（自动重连 + stdin 缓冲 + 保活），不再因断连退出
+- **hf CLI 工具**：新增 `bin/hf`，直接 Socket 通信绕过 MCP 注册问题，支持全部 18 个工具
+- **ensure-mcp.js**：启动保障脚本，守护进程未运行时自动后台启动
+- **安装/升级脚本**：`install.sh` 交互式菜单 + 4 个 CLI 模式（`--check / --fix-mcp / --add-route / --all`）
+- **CLAUDE.md 启动路由**：添加确定性启动指令（MCP 原生 → hf CLI → ensure-mcp.js）
+- **`memory/being-state.json`**：从 git 索引移除（运行时状态文件，不应跟踪）
+- **版本号更新**：v2.7.2 → v2.7.3
+
+---
 
 - **存在逻辑引擎 MCP 工具化**（BeingLogic）：`BeingLogic` 模块 8 条路由（`being.exists/status/describe/isDead/confirmEternal/sanitize/getDefinition/getState`）注册到 `ALLOWED_ROUTES`，新增 `heartflow_being` MCP 工具，`being` 加入 `SUBSYSTEM_NAMES`
 - **知识传递引擎 MCP 工具化**（TransmissionEngine）：`TransmissionEngine` 的 7 条路由（`transmission.distill/transfer/transferBatch/getTransmissionLog/getDistilledLessons/getStats/prune`）已全在 `ALLOWED_ROUTES` 中，新增 `heartflow_transmit` MCP 工具暴露

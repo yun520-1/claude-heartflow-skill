@@ -13,7 +13,7 @@
   */
 
 const path = require('path');
-const { ALLOWED_ROUTES, LAZY_TIER2, SUBSYSTEM_NAMES } = require('./heartflow-routes.js');
+const { ALLOWED_ROUTES, LAZY_TIER2, EAGER_NAMES, LAZY_NAMES } = require('./heartflow-routes.js');
 const { getDreamFragments } = require('./dream-fragments.js');
 const { recordDialogue: _recordDialogue, getDialogueHistory: _getDialogueHistory, getDialogueStats: _getDialogueStats, getDreamHistory: _getDreamHistory } = require('./dialogue-persistence.js');
 
@@ -285,22 +285,258 @@ class HeartFlow {
     this.emotionalGrowth = null;  // 情感成长
     this.moodEvolution = null;  // 心境演化
 
-    const STMod = _SearchTrace();
-    this.SearchTrace = STMod.SearchTrace;
-    this.SearchPhaseMetrics = STMod.SearchPhaseMetrics;
-    this.WeightComponents = STMod.WeightComponents;
-    this.QueryInfo = STMod.QueryInfo;
-    this.SearchSummary = STMod.SearchSummary;
-
-    // 记录搜索相关的类供外部引用
-    this._STRefs = { SearchTrace: this.SearchTrace, SearchPhaseMetrics: this.SearchPhaseMetrics, WeightComponents: this.WeightComponents, QueryInfo: this.QueryInfo, SearchSummary: this.SearchSummary };
-
     this._modules = {};
     this._mindSpace = null;   // 内部引用（向后兼容），实际模块用 this.mindSpace
     this.mindSpace = null;    // proper module
     this.consciousness = null;
     this.ethics = null;
     this.transmission = null;
+    this._initLazyRegistry();
+  }
+
+  /**
+   * _initLazyRegistry — LAZY_NAMES 模块惰性初始化注册表（v2.6.4 CRITICAL FIX）
+   *
+   * 在构造函数中调用，用 Object.defineProperty 为每个 LAZY_NAMES 模块安装 getter。
+   * 首次属性访问时自动加载模块并缓存，后续访问零开销。
+   * 创建成功后自动注册到 this._modules 供 dispatch() 路由使用。
+   */
+  _initLazyRegistry() {
+    const _self = this;
+    const factories = {};
+
+    const add = (name, factory) => { factories[name] = factory; };
+
+    // ─── 简单类实例 (new Constructor) ────────────────────────────────
+    add('lesson',           () => new (_LessonBank().LessonBank)(_self.rootPath));
+    add('evolution',        () => { const e = new (_EvolutionLoop().EvolutionLoop)({ rootPath: _self.rootPath, memory: _self.memory }); e.boot(); return e; });
+    add('dream',            () => new (_DreamEngine().DreamEngine)({}));
+    add('dreamConsolidation', () => new (_DreamConsolidation().DreamConsolidation)(_self.memory));
+    add('metaJudgment',     () => new (_MetaJudgment().MetaJudgment)(_self.rootPath));
+    add('metaMemory',       () => new (_MetaMemory().MetaMemory)(_self.rootPath));
+    add('skillGenerator',   () => new (_SkillGenerator().SkillGenerator)(_self.rootPath));
+    add('meta',             () => { const m = new (_MetaLearner().MetaLearner)({ rootPath: _self.rootPath, memory: _self.memory }); m.boot(); return m; });
+    add('self',             () => new (_SelfModel().SelfModel)(_self.rootPath));
+    add('verify',           () => new (_SelfVerifier().SelfVerifier)(_self.rootPath));
+    add('psychology',       () => new (_PsychologyEngine().PsychologyEngine)(_self.memory));
+    add('stability',        () => new (_StabilityGuard().StabilityGuard)());
+    add('confidence',       () => new (_ConfidenceCalibrator().ConfidenceCalibrator)());
+    add('restraint',        () => new (_SpontaneousRestraint().SpontaneousRestraint)());
+    add('decision',         () => new (_HeartFlowDecision().HeartFlowDecision)(_self.memory));
+    add('decisionVerifier', () => new (_DecisionVerifier().DecisionVerifier)());
+    add('counterfactual',   () => new (_CounterfactualEngine().CounterfactualEngine)({}));
+    add('execution',        () => new (_ExecutionVerifier().ExecutionVerifier)());
+    add('being',            () => new (_BeingLogic().BeingLogic)());
+    add('arbitration',      () => new (_CooperativeArbitration().CooperativeArbitration)({}));
+    add('embodied',         () => new (_EmbodiedCore().EmbodiedCore)(_self.rootPath));
+    add('workflow',         () => _WorkflowSwitch()());
+    add('snapshot',         () => _StateSnapshot()());
+    add('error',            () => _ErrorHandler()());
+    add('slots',            () => new (_Slots().Slots)({ dataDir: require('path').join(_self.rootPath, 'data') }));
+    add('transmission',     () => new (_TransmissionEngine().TransmissionEngine)(_self.rootPath));
+    add('aiPsychology',     () => new (_AIPsychologyEngine().AIPsychologyEngine)());
+    add('aiPhilosophy',     () => new (_AIPhilosophyEngine().AIPhilosophyEngine)({ beingLogic: _self.being }));
+
+    // ─── 事实检查器（try/catch 包装）─────────────────────────────────
+    add('truth', () => {
+      try {
+        const { factChecker } = require('./fact-checker.js');
+        return {
+          checkStatement: async (stmt) => factChecker.checkFact(stmt),
+          checkNumbers: (stmt) => factChecker.checkNumber(stmt),
+          checkSources: (stmt) => factChecker.checkAcademicClaim(stmt),
+          getStats: () => ({ type: 'fact-checker' }),
+        };
+      } catch (e) { _self._initErrors.push({ module: 'truth', error: e.message }); return null; }
+    });
+
+    // ─── 行为追踪（behavior-tracker + pattern-detector）───────────────
+    add('behavior', () => {
+      try {
+        const { behaviorTracker } = require('../behavior-tracker.js');
+        const { patternDetector } = require('../pattern-detector.js');
+        return {
+          createGoal: (args) => behaviorTracker.createGoal(args),
+          record: (goalId, args) => behaviorTracker.record(goalId, args),
+          getProgress: (goalId) => behaviorTracker.getProgress(goalId),
+          formatProgress: (goalId) => behaviorTracker.formatProgress(goalId),
+          getAllGoals: () => behaviorTracker.data.goals,
+          detectWeeklyPattern: (records) => patternDetector.detectWeeklyPattern(records),
+          detectTriggerPattern: (records) => patternDetector.detectTriggerPattern(records),
+          detectRelapseRisk: (goal) => patternDetector.detectRelapseRisk(goal),
+          getReport: (goalId) => {
+            const p = behaviorTracker.getProgress(goalId);
+            if (!p) return null;
+            const goal = behaviorTracker.data.goals.find(g => g.id === goalId);
+            const weekly = patternDetector.detectWeeklyPattern(goal.records);
+            const triggers = patternDetector.detectTriggerPattern(goal.records);
+            const risk = patternDetector.detectRelapseRisk(goal);
+            return { ...p, weekly, triggers, risk };
+          },
+          getStats: () => ({
+            goals: behaviorTracker.data.goals.length,
+            totalRecords: behaviorTracker.data.goals.reduce((n, g) => n + g.records.length, 0),
+            type: 'behavior-tracker+pattern-detector',
+          }),
+        };
+      } catch (e) { _self._initErrors.push({ module: 'behavior', error: e.message }); return null; }
+    });
+
+    // ─── 持久化层（WAL + atomicWrite）────────────────────────────────
+    add('persistence', () => {
+      try {
+        const { WriteAheadLog, OP_TYPES } = require('../utils/write-ahead-log.js');
+        const { atomicWrite } = require('../utils/atomic-write.js');
+        const fs = require('fs');
+        const p = require('path');
+        const walDir = p.join(_self.rootPath, 'memory', 'wal');
+        try { fs.mkdirSync(walDir, { recursive: true }); } catch (e) { /* wal dir exists */ }
+        const wal = new WriteAheadLog(walDir);
+        wal._loadSeq();
+        return {
+          append: (opType, data) => wal.append(opType, data),
+          commit: (seq) => wal.commit(seq),
+          replay: () => wal.replay(),
+          flush: () => wal.flush(),
+          atomicWrite: (filePath, content, options) => atomicWrite(filePath, content, options),
+          safeWrite: async (filePath, content) => {
+            const seq = await wal.append('write', { file: filePath, content: content.toString().slice(0, 50000) });
+            await atomicWrite(filePath, content);
+            await wal.commit(seq);
+            return { ok: true, seq, file: filePath };
+          },
+          recover: async () => {
+            const pending = await wal.replay();
+            const results = [];
+            for (const entry of pending) {
+              try {
+                if (entry.data?.file && entry.data?.content) {
+                  await atomicWrite(entry.data.file, entry.data.content);
+                  results.push({ seq: entry.seq, file: entry.data.file, recovered: true });
+                }
+              } catch (e) {
+                results.push({ seq: entry.seq, file: entry.data?.file, recovered: false, error: e.message });
+              }
+            }
+            return results;
+          },
+          getStats: () => ({ type: 'wal+atomic', walDir, opTypes: OP_TYPES }),
+        };
+      } catch (e) { _self._initErrors.push({ module: 'persistence', error: e.message }); return null; }
+    });
+
+    // ─── 情绪（委托 PsychologyEngine）───────────────────────────────
+    add('emotion', () => ({
+      process: (input) => {
+        if (!_self.psychology) return { pad: { pleasure: 0, arousal: 0, dominance: 0 }, intensity: 0, type: 'neutral' };
+        const r = _self.psychology.analyzePsychology(input);
+        return { pad: r.emotion, intensity: r.emotion.intensity || 0, type: r.intention.category || 'unknown' };
+      },
+      getPAD: (input) => {
+        if (!_self.psychology) return { pleasure: 0, arousal: 0, dominance: 0 };
+        const r = _self.psychology.analyzePsychology(input);
+        return { pleasure: r.emotion.pleasure, arousal: r.emotion.arousal, dominance: r.emotion.dominance };
+      },
+    }));
+
+    // ─── 记忆整合（委托 Observe 模块）───────────────────────────────
+    add('consolidate', () => {
+      try {
+        const observeMod = _Observe();
+        const obs = observeMod.createObserve(_self.memory, { autoConsolidate: true });
+        Object.defineProperty(_self, 'observe', { value: obs, writable: true, configurable: true, enumerable: true });
+        return {
+          consolidate: (...args) => obs.consolidate(...args),
+          stop: () => obs.stop(),
+          stats: () => obs.stats(),
+        };
+      } catch (e) { return null; }
+    });
+
+    // ─── 意识层（多子模块：GlobalWorkspace + MindWanderer + ...）───
+    add('consciousness', () => {
+      try {
+        const gw = new (_GlobalWorkspace().GlobalWorkspace)(_self.rootPath);
+        const mw = new (_MindWanderer().MindWanderer)(_self.rootPath);
+        const pe = new (_PhenomenologyEngine().PhenomenologyEngine)();
+        const cs = new (_ConsciousnessSelfModel().SelfModel)(_self.rootPath);
+        return {
+          globalWorkspace: gw,
+          mindWanderer: mw,
+          phenomenology: pe,
+          self: cs,
+          getStatus: () => ({ workspace: gw?.cycleCount || 0, wanderer: mw?.isActive || false }),
+        };
+      } catch (e) { return null; }
+    });
+
+    // ─── 伦理层（多子模块：SAGE + Boundary + Values）────────────────
+    add('ethics', () => {
+      try {
+        const sg = new (_SAGEGuardian().SAGEGuardian)(_self.rootPath);
+        const bn = new (_BoundaryNegotiation().BoundaryNegotiation)(_self.rootPath);
+        const vi = new (_ValueInternalizer().ValueInternalizer)(_self.rootPath);
+        return {
+          guardian: sg, boundary: bn, values: vi,
+          check: (input, context) => ({
+            guardianResult: sg?.classifyContent(input, context),
+            boundaryResult: bn?.assess(input),
+          }),
+        };
+      } catch (e) { return null; }
+    });
+
+    // ─── 心空间守护（同时设置 _mindSpace 向后兼容引用）─────────────
+    add('mindSpace', () => {
+      try {
+        const ms = new (_MindSpaceGuardian().MindSpaceGuardian)(_self.memory);
+        _self._mindSpace = ms;
+        return ms;
+      } catch (e) { return null; }
+    });
+
+    // ─── 哲学引擎（依赖认知、意识、伦理、心空间等多模块）──────────
+    add('philosophy', () => {
+      try {
+        return new (_PhilosophyEngine().PhilosophyEngine)({
+          memory: _self.memory, rootPath: _self.rootPath,
+          beingLogic: _self.being, consciousness: _self.consciousness,
+          ethics: _self.ethics, mindSpace: _self.mindSpace,
+          heartLogic: _self.heartLogic,
+        });
+      } catch (e) { return null; }
+    });
+
+    // ─── 函数导出模块（不是类实例，直接返回函数包）────────────────
+    add('budget', () => {
+      const B = _Budget();
+      return {
+        Budget: B.Budget, countTokens: B.countTokens,
+        resolveThinkingBudget: B.resolveThinkingBudget,
+        exceedsTokenLimit: B.exceedsTokenLimit,
+        getBudgetDescription: B.getBudgetDescription,
+      };
+    });
+    add('utils', () => _CoreUtils());
+    add('graph', () => _Graph());
+
+    // ─── 安装惰性 getter — 遍历 LAZY_NAMES 安装 getter ──────────────
+    for (const name of LAZY_NAMES) {
+      if (_self[name] !== null && _self[name] !== undefined) continue;
+      if (!factories[name]) continue;
+      Object.defineProperty(_self, name, {
+        get() {
+          const val = factories[name]();
+          if (val !== null && val !== undefined) {
+            Object.defineProperty(this, name, { value: val, writable: true, configurable: true, enumerable: true });
+            if (this._modules) this._modules[name] = val;
+          }
+          return val;
+        },
+        configurable: true,
+        enumerable: true,
+      });
+    }
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
@@ -325,8 +561,6 @@ class HeartFlow {
       console.warn(`[HeartFlow] 身份核心加载部分失败:`, identityResult.errors);
     }
 
-    // ─── [P1 UPGRADE] 将七条身份规则写入 CORE 层（持久化）────────────
-    // （在 memory 初始化之后调用）
     // ─── Memory — 记忆系统初始化后写入 CORE 层规则 ───────────────────
 
     // ─── 认知协议 — 慢下来，先理解再行动 ─────────────────────
@@ -337,281 +571,20 @@ class HeartFlow {
     this.memory = new (_MeaningfulMemory().MeaningfulMemory)(this.rootPath);
     this.knowledge = new (_KnowledgeGraph().KnowledgeGraph)(this.rootPath);
 
+    // ─── 心虫核心判断引擎 — think() 必需，优先初始化 ──────────────
+    try {
+      this.heartLogic = new (_HeartLogic().HeartLogic)();
+    } catch (e) { /* heartLogic optional */ }
+
     // ─── [P1 UPGRADE] CORE 层身份规则初始化 ───────────────────────────
     this._initCoreRules();
 
     // TopicScope — 话题隔离，主动实例化并桥接到 MeaningfulMemory
     this.topicScope = new (_TopicScope().TopicScope)().setMemoryBridge(this.memory);
+    this._modules.topics = this.topicScope;  // 注册为 'topics' 供 dispatch 路由使用
 
-    // Evolution
-    this.evolution = new (_EvolutionLoop().EvolutionLoop)({ rootPath: this.rootPath, memory: this.memory }).boot();
-    // 设置 Q-table 上下文环境（Fix C: machineId + environment + region）
-    try {
-      if (this.evolution && this.evolution.core && this.evolution.core.rl) {
-        this.evolution.core.rl.setContext({
-          machineId: require('os').hostname(),
-          environment: process.env.NODE_ENV || process.env.LARK_CHANNEL_PROFILE || 'development',
-          region: process.env.HEARTFLOW_REGION || 'local',
-        });
-        console.warn('[HeartFlow] Q-table 上下文已设置');
-      }
-    } catch (e) { /* Q-table 上下文设置为非致命 */ }
-    this.dream = new (_DreamEngine().DreamEngine)({});
-    this.dreamConsolidation = new (_DreamConsolidation().DreamConsolidation)(this.memory);
-    this.lesson = new (_LessonBank().LessonBank)(this.rootPath);
-    this.metaJudgment = new (_MetaJudgment().MetaJudgment)(this.rootPath);
-    this.metaMemory = new (_MetaMemory().MetaMemory)(this.rootPath);
-    this.skillGenerator = new (_SkillGenerator().SkillGenerator)(this.rootPath);
-    this.meta = new (_MetaLearner().MetaLearner)({ rootPath: this.rootPath, memory: this.memory }).boot();
-
-    // Identity
-    this.self = new (_SelfModel().SelfModel)(this.rootPath);
-    this.verify = new (_SelfVerifier().SelfVerifier)(this.rootPath);
-    this.questions = null;  // 已废弃，改用 TopicScope
-
-    // Psychology
-    this.psychology = new (_PsychologyEngine().PsychologyEngine)(this.memory);
-    // Emotion — 委托 PsychologyEngine
-    this.emotion = {
-      process: (input) => {
-        if (!this.psychology) return { pad: { pleasure: 0, arousal: 0, dominance: 0 }, intensity: 0, type: 'neutral' };
-        const r = this.psychology.analyzePsychology(input);
-        return { pad: r.emotion, intensity: r.emotion.intensity || 0, type: r.intention.category || 'unknown' };
-      },
-      getPAD: (input) => {
-        if (!this.psychology) return { pleasure: 0, arousal: 0, dominance: 0 };
-        const r = this.psychology.analyzePsychology(input);
-        return { pleasure: r.emotion.pleasure, arousal: r.emotion.arousal, dominance: r.emotion.dominance };
-      }
-    };
-
-    // Truth
-    try {
-      const { factChecker } = require('./fact-checker.js');
-      this.truth = {
-        checkStatement: async (stmt) => factChecker.checkFact(stmt),
-        checkNumbers: (stmt) => factChecker.checkNumber(stmt),
-        checkSources: (stmt) => factChecker.checkAcademicClaim(stmt),
-        getStats: () => ({ type: 'fact-checker' }),
-      };
-    } catch (e) {
-      this._initErrors.push({ module: 'truth', error: e.message });
-    }
-
-    // Behavior
-    try {
-      const { behaviorTracker } = require('../behavior-tracker.js');
-      const { patternDetector } = require('../pattern-detector.js');
-      this.behavior = {
-        createGoal: (args) => behaviorTracker.createGoal(args),
-        record: (goalId, args) => behaviorTracker.record(goalId, args),
-        getProgress: (goalId) => behaviorTracker.getProgress(goalId),
-        formatProgress: (goalId) => behaviorTracker.formatProgress(goalId),
-        getAllGoals: () => behaviorTracker.data.goals,
-        detectWeeklyPattern: (records) => patternDetector.detectWeeklyPattern(records),
-        detectTriggerPattern: (records) => patternDetector.detectTriggerPattern(records),
-        detectRelapseRisk: (goal) => patternDetector.detectRelapseRisk(goal),
-        getReport: (goalId) => {
-          const p = behaviorTracker.getProgress(goalId);
-          if (!p) return null;
-          const goal = behaviorTracker.data.goals.find(g => g.id === goalId);
-          const weekly = patternDetector.detectWeeklyPattern(goal.records);
-          const triggers = patternDetector.detectTriggerPattern(goal.records);
-          const risk = patternDetector.detectRelapseRisk(goal);
-          return { ...p, weekly, triggers, risk };
-        },
-        getStats: () => ({
-          goals: behaviorTracker.data.goals.length,
-          totalRecords: behaviorTracker.data.goals.reduce((n, g) => n + g.records.length, 0),
-          type: 'behavior-tracker+pattern-detector',
-        }),
-      };
-    } catch (e) {
-      this._initErrors.push({ module: 'behavior', error: e.message });
-    }
-
-    // Persistence
-    try {
-      const { WriteAheadLog, OP_TYPES } = require('../utils/write-ahead-log.js');
-      const { atomicWrite } = require('../utils/atomic-write.js');
-      const fs = require('fs');
-      const walDir = require('path').join(this.rootPath, 'memory', 'wal');
-      try { fs.mkdirSync(walDir, { recursive: true }); } catch (e) { /* wal dir already exists or fails */ }
-      try { fs.chmodSync(walDir, 0o700); } catch (e) { /* best effort */ }
-      const wal = new WriteAheadLog(walDir);
-      wal._loadSeq();
-      this.persistence = {
-        append: (opType, data) => wal.append(opType, data),
-        commit: (seq) => wal.commit(seq),
-        replay: () => wal.replay(),
-        flush: () => wal.flush(),
-        atomicWrite: (filePath, content, options) => atomicWrite(filePath, content, options),
-        safeWrite: async (filePath, content) => {
-          const seq = await wal.append('write', { file: filePath, content: content.toString().slice(0, 50000) });
-          await atomicWrite(filePath, content);
-          await wal.commit(seq);
-          return { ok: true, seq, file: filePath };
-        },
-        recover: async () => {
-          const pending = await wal.replay();
-          const results = [];
-          for (const entry of pending) {
-            try {
-              if (entry.data?.file && entry.data?.content) {
-                await atomicWrite(entry.data.file, entry.data.content);
-                results.push({ seq: entry.seq, file: entry.data.file, recovered: true });
-              }
-            } catch (e) {
-              results.push({ seq: entry.seq, file: entry.data?.file, recovered: false, error: e.message });
-            }
-          }
-          return results;
-        },
-        getStats: () => ({ type: 'wal+atomic', walDir, opTypes: OP_TYPES }),
-      };
-    } catch (e) {
-      this._initErrors.push({ module: 'persistence', error: e.message });
-    }
-
-    // Engine modules
-    try { this.stability = new (_StabilityGuard().StabilityGuard)(); } catch (e) { this._initErrors.push({module: 'stability', error: e.message}); }
-    try { this.execution = new (_ExecutionVerifier().ExecutionVerifier)(); } catch (e) { this._initErrors.push({module: 'execution', error: e.message}); }
-    try { this.decision = new (_HeartFlowDecision().HeartFlowDecision)(this.memory); } catch (e) { this._initErrors.push({module: 'decision', error: e.message}); }
-    try { this.decisionVerifier = new (_DecisionVerifier().DecisionVerifier)(); } catch (e) { this._initErrors.push({module: 'decisionVerifier', error: e.message}); }
-    try { this.counterfactual = new (_CounterfactualEngine().CounterfactualEngine)(); } catch (e) { this._initErrors.push({module: 'counterfactual', error: e.message}); }
-    try { this.confidence = new (_ConfidenceCalibrator().ConfidenceCalibrator)(); } catch (e) { this._initErrors.push({module: 'confidence', error: e.message}); }
-    try { this.restraint = new (_SpontaneousRestraint().SpontaneousRestraint)(); } catch (e) { this._initErrors.push({module: 'restraint', error: e.message}); }
-    try { this.workflow = new (_WorkflowSwitch())(); } catch (e) { this._initErrors.push({module: 'workflow', error: e.message}); }
-    this.snapshot = _StateSnapshot();
-    this.error = _ErrorHandler();
-
-    // ─── Tier 2 延迟加载注册表
-    // Tier 2 模块在首次 dispatch 时才加载并实例化。
-    // 已提取到 heartflow-routes.js 的 LAZY_TIER2 注册表
+    // ─── 非核心模块按需加载 — 首次访问时懒加载 ─────────────
     this._lazy = LAZY_TIER2;
-
-    // ─── Search modules — BM25Engine/HybridSearchEngine 已禁用（无 BM25Engine/HybridSearchEngine 类）
-    // try { this.bm25 = new BM25Engine({ dataDir: path.join(this.rootPath, 'data/search'), autoSave: true }); } catch (e) { console.warn('[HeartFlow] BM25 init error:', e.message); }
-    // try { this.hybrid = new HybridSearchEngine({ dataDir: path.join(this.rootPath, 'data/search') }); } catch (e) { console.warn('[HeartFlow] HybridSearch init error:', e.message); }
-
-    // Budget & Utils (function exports, not classes)
-    const BudgetMod = _Budget();
-    this.budget = { Budget: BudgetMod.Budget, countTokens: BudgetMod.countTokens, resolveThinkingBudget: BudgetMod.resolveThinkingBudget, exceedsTokenLimit: BudgetMod.exceedsTokenLimit, getBudgetDescription: BudgetMod.getBudgetDescription };
-    this.utils = _CoreUtils();
-
-    // Graph (singleton functions)
-    this.graph = _Graph();
-
-    // Slots & Observe
-    try {
-      this.slots = new (_Slots().Slots)({ dataDir: path.join(this.rootPath, 'data') });
-    } catch (e) { /* slots optional */ }
-    try {
-      const observeMod = _Observe();
-      this.observe = observeMod.createObserve(this.memory, { autoConsolidate: true });
-      this.consolidate = {
-        consolidate: (...args) => this.observe.consolidate(...args),
-        stop: () => this.observe.stop(),
-        stats: () => this.observe.stats(),
-      };
-    } catch (e) { /* observe optional */ }
-
-    // ─── Diagnostic ───────────────────────────────────────────────────────────
-    const { runDiagnostic } = require('./self-diagnostic.js');
-    this.diagnostic = { run: runDiagnostic };
-
-    // ─── MindSpace — 心空间守护 ────────────────────────────────────────────────
-    try {
-      this.mindSpace = new (_MindSpaceGuardian().MindSpaceGuardian)(this.memory);
-      this._mindSpace = this.mindSpace;
-    } catch (e) { /* mindspace optional */ }
-
-    // ─── Consciousness Layer ───────────────────────────────────────────────────
-    try {
-      this.globalWorkspace = new (_GlobalWorkspace().GlobalWorkspace)(this.rootPath);
-      this.mindWanderer = new (_MindWanderer().MindWanderer)(this.rootPath);
-      this.phenomenology = new (_PhenomenologyEngine().PhenomenologyEngine)();
-      this.consciousnessSelf = new (_ConsciousnessSelfModel().SelfModel)(this.rootPath);
-      this.consciousness = {
-        globalWorkspace: this.globalWorkspace,
-        mindWanderer: this.mindWanderer,
-        phenomenology: this.phenomenology,
-        self: this.consciousnessSelf,
-        getStatus: () => ({
-          workspace: this.globalWorkspace?.cycleCount || 0,
-          wanderer: this.mindWanderer?.isActive || false,
-        })
-      };
-    } catch (e) { /* consciousness optional */ }
-
-    // ─── Ethics Layer ──────────────────────────────────────────────────────────
-    try {
-      this.sageGuardian = new (_SAGEGuardian().SAGEGuardian)(this.rootPath);
-      this.boundaryNeg = new (_BoundaryNegotiation().BoundaryNegotiation)(this.rootPath);
-      this.valueInternalizer = new (_ValueInternalizer().ValueInternalizer)(this.rootPath);
-      this.ethics = {
-        guardian: this.sageGuardian,
-        boundary: this.boundaryNeg,
-        values: this.valueInternalizer,
-        check: (input, context) => {
-          const guardianResult = this.sageGuardian?.classifyContent(input, context);
-          const boundaryResult = this.boundaryNeg?.assess(input);
-          return { guardianResult, boundaryResult };
-        }
-      };
-    } catch (e) { /* ethics optional */ }
-
-    // ─── Philosophy Engine ─────────────────────────────────────────────────────
-    try {
-      this.philosophy = new (_PhilosophyEngine().PhilosophyEngine)({
-        memory: this.memory,
-        rootPath: this.rootPath,
-        beingLogic: this.being,
-        consciousness: this.consciousness,
-        ethics: this.ethics,
-        mindSpace: this.mindSpace,
-        heartLogic: this.heartLogic,
-      });
-    } catch (e) { /* philosophy optional */ }
-
-    // ─── AI Psychology Engine ────────────────────────────────────────────────
-    try {
-      this.aiPsychology = new (_AIPsychologyEngine().AIPsychologyEngine)();
-    } catch (e) { /* aiPsychology optional */ }
-
-    // ─── AI Philosophy Engine ────────────────────────────────────────────────
-    try {
-      this.aiPhilosophy = new (_AIPhilosophyEngine().AIPhilosophyEngine)({
-        beingLogic: this.being,
-      });
-    } catch (e) { /* aiPhilosophy optional */ }
-
-    // ─── Transmission Layer ────────────────────────────────────────────────────
-    try {
-      this.transmission = new (_TransmissionEngine().TransmissionEngine)(this.rootPath);
-    } catch (e) { /* transmission optional */ }
-
-    // ─── Heart Logic ──────────────────────────────────────────────────────────
-    try {
-      this.heartLogic = new (_HeartLogic().HeartLogic)();
-    } catch (e) { /* heartLogic optional */ }
-
-    // ─── 推理层 & 情感自主层 — 必须在 ThoughtChain 之前注册 ────────────────
-    // [FIX] 解决模块在 _registerModules() 之后才初始化导致丢失的问题
-    // 在 ThoughtChain 之前手动收录这些模块
-    const LATE_ADDITIONS = [
-      'knowledgeBase', 'commonsenseEngine', 'causalInference', 'inferenceChain',
-      'autonomousEmotion', 'desireSystem', 'emotionalGrowth', 'moodEvolution',
-      // 新增：意识/伦理/心空间/传递层
-      'mindSpace', 'consciousness', 'ethics', 'transmission', 'philosophy',
-      // AI 原生心理学与哲学
-      'aiPsychology', 'aiPhilosophy',
-    ];
-    for (const name of LATE_ADDITIONS) {
-      if (this[name] !== null && this[name] !== undefined) {
-        this._modules[name] = this[name];
-      }
-    }
 
     // ─── Thought Chain 初始化 ───────────────────────────────────────────────
     try {
@@ -675,8 +648,8 @@ class HeartFlow {
 
   _registerModules() {
     this._modules = {};
-    const subsystemNames = SUBSYSTEM_NAMES;
-    for (const name of subsystemNames) {
+    // 只注册急切加载的模块到 _modules 表
+    for (const name of EAGER_NAMES) {
       if (this[name] !== null && this[name] !== undefined) {
         this._modules[name] = this[name];
       }
@@ -696,11 +669,22 @@ class HeartFlow {
     }
     this.started = false;
     this._modules = {};
-    this._mindSpace = null;
-    this.mindSpace = null;
-    this.consciousness = null;
-    this.ethics = null;
-    this.transmission = null;
+    // 安全归零：绕过惰性 getter（用 Object.defineProperty 替换 getter 定义）
+    const _nullify = (obj, key) => {
+      try {
+        const desc = Object.getOwnPropertyDescriptor(obj, key);
+        if (desc && desc.get && !desc.set) {
+          Object.defineProperty(obj, key, { value: null, writable: true, configurable: true });
+        } else {
+          obj[key] = null;
+        }
+      } catch (e) { /* ignore */ }
+    };
+    _nullify(this, '_mindSpace');
+    _nullify(this, 'mindSpace');
+    _nullify(this, 'consciousness');
+    _nullify(this, 'ethics');
+    _nullify(this, 'transmission');
   }
 
   // dispatch 白名单 - 只有在白名单中的路由才能被外部调用
@@ -783,6 +767,15 @@ class HeartFlow {
         }
       } catch (e) {
         throw new Error(`Lazy load failed for '${subsystem}': ${e.message}`);
+      }
+    }
+
+    // ─── LAZY_NAMES 回退：触发惰性 getter ────────────────────────────
+    if (!mod && LAZY_NAMES.includes(subsystem)) {
+      try {
+        mod = this[subsystem]; // 触发惰性 getter，自动注册到 _modules
+      } catch (e) {
+        throw new Error(`LAZY_NAMES module '${subsystem}' 加载失败: ${e.message}`);
       }
     }
 
@@ -900,7 +893,7 @@ class HeartFlow {
       const dialogue = this.getDialogueStats?.() || {};
       const dreams = this.getDreamHistory?.(3) || [];
       return {
-        response: `✅ 心虫运行中（无需启动，已是默认状态）\n\n版本: ${health.version} | 运行: ${health.uptime_ms}ms | 模块: ${health.subsystems.loaded}个\nCORE层: ${core.length}条规则 | 记忆碎片: ${frags.length}条 | 对话记录: ${dialogue.total}条 | 梦境历史: ${dreams.length}条\n${health.initErrors?.length ? `⚠️ 初始化错误: ${health.initErrors.length}个` : '初始化错误: 无 ✅'}`,
+        response: `✅ 引擎运行中（无需启动，已是默认状态）\n\n版本: ${health.version} | 运行: ${health.uptime_ms}ms | 模块: ${health.subsystems.loaded}个\nCORE层: ${core.length}条规则 | 记忆碎片: ${frags.length}条 | 对话记录: ${dialogue.total}条 | 梦境历史: ${dreams.length}条\n${health.initErrors?.length ? `⚠️ 初始化错误: ${health.initErrors.length}个` : '初始化错误: 无 ✅'}`,
         decision: { shouldRespond: true, reason: 'status_check' },
         judgment: { whatIsThis: { isStartupRequest: true }, isRightAction: { result: true } },
         _heartflow_alive: true,
@@ -908,7 +901,7 @@ class HeartFlow {
     }
     if (statusPatterns.test(input.trim())) {
       return {
-        response: '✅ 心虫在线（已融入 Hermes，无需启动）',
+        response: '✅ 引擎已在线（已融入 Hermes，无需启动）',
         decision: { shouldRespond: true, reason: 'alive_check' },
         _heartflow_alive: true,
       };
@@ -985,7 +978,7 @@ class HeartFlow {
       decision: {
         shouldRespond: false,
         reason: shouldBeSilentResult.reason || 'silent_by_heart_logic',
-        insight: shouldBeSilentResult.insight || '心虫选择沉默',
+        insight: shouldBeSilentResult.insight || '选择沉默',
       },
       judgment,
     };
@@ -1379,7 +1372,7 @@ class HeartFlow {
     const stars = '★'.repeat(Math.round(quality * 5)) + '☆'.repeat(5 - Math.round(quality * 5));
     lines.push(`**梦境质量**：${stars} ${Math.round(quality * 100)}%`);
     lines.push('');
-    lines.push('*心虫在梦中继续进化。*');
+    lines.push('*在梦中继续进化。*');
 
     return lines.join('\n');
   }
@@ -1411,7 +1404,9 @@ class HeartFlow {
 
   getMindSpace() {
     if (!this.started) throw new Error('HeartFlow not started');
-    return { rules: this._mindSpace.rules, workingEntries: Object.entries(this.memory?.ephemeral || {}).slice(0, 10) };
+    const ms = this.mindSpace; // 触发惰性加载
+    if (!ms) return { rules: [], error: 'mindSpace not available' };
+    return { rules: ms.rules, workingEntries: Object.entries(this.memory?.ephemeral || {}).slice(0, 10) };
   }
 
   remember(key, value, tier = 'learned') {

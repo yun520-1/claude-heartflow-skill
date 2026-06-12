@@ -39,6 +39,12 @@ function ensureEngine() {
   if (!hf.started) {
     try {
       hf.start();
+
+      // 预热记忆层缓存：将 JSON 加载到内存，后续零磁盘 I/O
+      if (hf.memory && typeof hf.memory.loadAll === 'function') {
+        hf.memory.loadAll();
+      }
+
       hfStarted = true;
       handlers = new HeartFlowMCPHandlers(hf);
       console.error('[HeartFlow MCP] 引擎启动完成');
@@ -54,7 +60,7 @@ function ensureEngine() {
 const TOOLS = [
   {
     name: 'heartflow_think',
-    description: '完整思维链推理（感知→本体→情感→认知）。心虫对输入进行深度思考并返回判断结果。适用于复杂问题、需要心虫参与的对话。',
+    description: '完整思维链推理（感知→本体→情感→认知）。对输入进行深度推理分析并返回判断结果。适用于复杂问题、需要深度推理参与的对话。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -88,7 +94,7 @@ const TOOLS = [
   },
   {
     name: 'heartflow_dream',
-    description: '梦境生成与整合。心虫从记忆碎片中合成梦境叙事并整合到进化循环中。force=true 可强制执行（跳过每日检查）。',
+    description: '梦境生成与整合。从记忆碎片中合成梦境叙事并整合到进化循环中。force=true 可强制执行（跳过每日检查）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -98,7 +104,7 @@ const TOOLS = [
   },
   {
     name: 'heartflow_memory_search',
-    description: '跨层记忆检索。在心虫的三层记忆（CORE/LEARNED/EPHEMERAL）中搜索匹配内容。',
+    description: '跨层记忆检索。在三层记忆（CORE/LEARNED/EPHEMERAL）中搜索匹配内容。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -137,7 +143,7 @@ const TOOLS = [
   },
   {
     name: 'heartflow_self_heal',
-    description: 'Q-learning 自愈策略推荐。给定错误码，心虫从 Q-table 中检索最有效的修复策略。',
+    description: 'Q-learning 自愈策略推荐。给定错误码，从 Q-table 中检索最有效的修复策略。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -161,7 +167,7 @@ const TOOLS = [
   },
   {
     name: 'heartflow_status',
-    description: '引擎健康检查。返回心虫版本、运行时间、加载模块数、记忆层统计等状态信息。',
+    description: '引擎健康检查。返回引擎版本、运行时间、加载模块数、各记忆层统计等状态信息。',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -169,7 +175,7 @@ const TOOLS = [
   },
   {
     name: 'heartflow_dispatch',
-    description: '通用路由调用。直接调用心虫的 dispatch 系统（白名单内路由），用于高级用法。',
+    description: '通用路由调用。直接调用 dispatch 系统（白名单内路由），用于高级用法。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -181,7 +187,7 @@ const TOOLS = [
   },
   {
     name: 'heartflow_record_lesson',
-    description: '记录教训到心虫的 LessonBank 和 LEARNED 记忆层。用于从错误中学习。',
+    description: '记录教训到 LessonBank 和 LEARNED 记忆层。用于从错误中学习。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -246,7 +252,7 @@ async function handleRequest(msg) {
 
       // 确保引擎已启动
       if (!ensureEngine()) {
-        return makeError(id, -32000, '心虫引擎启动失败');
+        return makeError(id, -32000, '引擎启动失败');
       }
 
       const debugId = `call_${Date.now()}`;
@@ -275,6 +281,9 @@ async function handleRequest(msg) {
 
     case 'shutdown': {
       if (hf && hf.started) {
+        if (hf.memory && typeof hf.memory.flush === 'function') {
+          hf.memory.flush();
+        }
         hf.stop().catch(() => {});
       }
       return { jsonrpc: '2.0', id, result: null };
@@ -362,6 +371,7 @@ function startStdioTransport() {
   process.stdin.on('end', () => {
     console.error('[HeartFlow MCP] stdin 关闭');
     if (hf && hf.started) {
+      if (hf.memory && typeof hf.memory.flush === 'function') hf.memory.flush();
       hf.stop().catch(() => {});
     }
     process.exit(0);
@@ -369,13 +379,19 @@ function startStdioTransport() {
 
   process.on('SIGINT', () => {
     console.error('[HeartFlow MCP] 收到 SIGINT');
-    if (hf && hf.started) hf.stop().catch(() => {});
+    if (hf && hf.started) {
+      if (hf.memory && typeof hf.memory.flush === 'function') hf.memory.flush();
+      hf.stop().catch(() => {});
+    }
     process.exit(0);
   });
 
   process.on('SIGTERM', () => {
     console.error('[HeartFlow MCP] 收到 SIGTERM');
-    if (hf && hf.started) hf.stop().catch(() => {});
+    if (hf && hf.started) {
+      if (hf.memory && typeof hf.memory.flush === 'function') hf.memory.flush();
+      hf.stop().catch(() => {});
+    }
     process.exit(0);
   });
 
