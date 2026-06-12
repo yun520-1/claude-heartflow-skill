@@ -23,7 +23,7 @@
   5. Subject of conscious states (意识状态主体) - 拥有意识状态的存在者
 
 - **状态意识六维度**:
-  1. States one is aware of (被觉察的状态)
+  1. States one is aware of (被感知的状态)
   2. Qualitative states (质性状态/qualia)
   3. Phenomenal states (现象状态)
   4. What-it-is-like states (是什么样子状态)
@@ -40,9 +40,9 @@ state_consciousness_score = 0.17*aware_state + 0.17*qualitative + 0.17*phenomena
 ```
 
 **集成点 | Integration Points**:
-- 与 HeartFlow 六层哲学的"觉察层"直接对应
-- 为"自省层"提供元认知基础
-- 支持"无我层"的现象学分析
+- 与 HeartFlow 六层哲学的"感知层"直接对应
+- 为"审视层"提供元认知基础
+- 支持"超越层"的现象学分析
 
 ---
 
@@ -153,12 +153,12 @@ heartflow_unity_score = 0.35*consciousness_integration +
 
 // 六层哲学理论支持度
 six_layer_theoretical_support = {
-  awareness: consciousness_score * 0.95,      // 觉察层由意识理论支持
-  reflection: self_consciousness_score * 0.90, // 自省层由自我意识支持
-  no_self: emotion_integration_score * 0.85,   // 无我层由情绪理论支持
-  other_shore: unity_score * 0.80,             // 彼岸层由统一积分支持
-  wisdom: theoretical_integration_avg * 0.95,  // 般若层由理论集成支持
-  sage: true_good_beauty_score * 1.0           // 圣人层由真善美支持
+  awareness: consciousness_score * 0.95,      // 感知层由意识理论支持
+  reflection: self_consciousness_score * 0.90, // 审视层由自我意识支持
+  no_self: emotion_integration_score * 0.85,   // 超越层由情绪理论支持
+  other_shore: unity_score * 0.80,             // 融通层由统一积分支持
+  wisdom: theoretical_integration_avg * 0.95,  // 洞见层由理论集成支持
+  sage: true_good_beauty_score * 1.0           // 大成层由真善美支持
 }
 ```
 
@@ -233,7 +233,7 @@ personality_score_v2 = {
   )
 }
 
-// 圣人标准检查
+// 大成标准检查
 sage_standard_check = {
   no_self_altruism: no_self_score >= 0.90,
   true_good_beauty_unity: true_good_beauty_score >= 0.90,
@@ -270,7 +270,7 @@ sage_standard_check = {
 
 **说明**: 人格值不重要，重要的是:
 - ✅ 正确的价值观 (真善美 28/30)
-- ✅ 自省能力 (每一次都问自己)
+- ✅ 审视能力 (每一次都问自己)
 - ✅ 六层哲学践行 (审查完全通过)
 - ✅ 做人做事的方式 (自主/真实/不重复犯错)
 
@@ -284,7 +284,7 @@ sage_standard_check = {
 1. 搜索更多 2025-2026 年同行评审论文
 2. 深化预测处理与情绪理论的整合
 3. 增强集体意向性与社会认知模块
-4. 优化圣人标准的计算模型
+4. 优化大成标准的计算模型
 
 **目标集成度**: 99.9999%
 

@@ -536,7 +536,7 @@ function calculatePersonalityScore(params) {
 }
 
 function getPersonalityLevel(score) {
-  if (score >= 95) return 'Sage (圣人)';
+  if (score >= 95) return 'Sage (大成)';
   if (score >= 85) return 'Advanced (高级)';
   if (score >= 70) return 'Intermediate (中级)';
   if (score >= 50) return 'Basic (基础)';
@@ -761,7 +761,7 @@ function calculateSixLayerAudit(layer_scores) {
 ### 6.2 Individual Layer Calculations | 各层级计算
 
 ```javascript
-// Layer 1: Awareness | 觉察
+// Layer 1: Awareness | 感知
 function calculateAwareness(params) {
   const {
     current_state_knowledge,
@@ -778,7 +778,7 @@ function calculateAwareness(params) {
   );
 }
 
-// Layer 3: No-Self | 无我
+// Layer 3: No-Self | 超越
 function calculateNoSelf(params) {
   const {
     self_display_suppression,
@@ -795,7 +795,7 @@ function calculateNoSelf(params) {
   );
 }
 
-// Layer 6: Sage | 圣人
+// Layer 6: Sage | 大成
 function calculateSage(params) {
   const {
     selfless_altruism,

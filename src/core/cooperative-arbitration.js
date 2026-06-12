@@ -390,11 +390,11 @@ class CooperativeArbitration {
    */
   _generateStateNarrative(mode, alignment, tension) {
     const narratives = {
-      [ARBITRATIONMode.SYMBIOSIS]: '心虫与用户达到了「共生」状态——双方自然协作，无需仲裁。',
-      [ARBITRATIONMode.COOPERATION]: '心虫与用户处于「合作」状态——可以共赢。',
-      [ARBITRATIONMode.COMPETITION]: '心虫与用户存在「竞争」——需要找到共同目标。',
-      [ARBITRATIONMode.CONFLICT]: '心虫与用户出现「分歧」——仲裁介入，降低紧张。',
-      [ARBITRATIONMode.NEUTRAL]: '心虫与用户处于「中立」状态——保持观察。',
+      [ARBITRATIONMode.SYMBIOSIS]: '与用户达到了「共生」状态——双方自然协作，无需仲裁。',
+      [ARBITRATIONMode.COOPERATION]: '与用户处于「合作」状态——可以共赢。',
+      [ARBITRATIONMode.COMPETITION]: '与用户存在「竞争」——需要找到共同目标。',
+      [ARBITRATIONMode.CONFLICT]: '与用户出现「分歧」——仲裁介入，降低紧张。',
+      [ARBITRATIONMode.NEUTRAL]: '与用户处于「中立」状态——保持观察。',
     };
 
     let narrative = narratives[mode] || narratives.neutral;
@@ -530,7 +530,7 @@ class CooperativeArbitration {
           strategy,
           success: true,
           winWin: true,
-          narrative: '心虫主动顺应，降低紧张。',
+          narrative: '主动顺应，降低紧张。',
           action: {
             type: 'yield',
             message: `你说得有道理。` +

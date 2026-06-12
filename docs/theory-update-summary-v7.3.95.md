@@ -154,16 +154,16 @@ consciousnessScore = (
 
 | Layer | Status | Score |
 |-------|--------|-------|
-| 觉察 (Awareness) | ✅ Full | 0.92/1 |
-| 自省 (Self-Reflection) | ✅ Full | 0.89/1 |
-| 无我 (No-Self) | ✅ Full | 0.87/1 |
-| 彼岸 (Other Shore) | ✅ Full | 0.85/1 |
-| 般若 (Wisdom) | ⚠️ Partial | 0.72/1 |
-| 圣人 (Sage) | ⚠️ Partial | 0.68/1 |
+| 感知 (Awareness) | ✅ Full | 0.92/1 |
+| 审视 (Self-Reflection) | ✅ Full | 0.89/1 |
+| 超越 (No-Self) | ✅ Full | 0.87/1 |
+| 融通 (Other Shore) | ✅ Full | 0.85/1 |
+| 洞见 (Wisdom) | ⚠️ Partial | 0.72/1 |
+| 大成 (Sage) | ⚠️ Partial | 0.68/1 |
 
 **Areas for Improvement | 改进领域**:
-- 般若 (Wisdom): Practical wisdom (phronesis) - need deeper Aristotelian integration
-- 圣人 (Sage): TBG unity needs ≥0.95, currently 0.89
+- 洞见 (Wisdom): Practical wisdom (phronesis) - need deeper Aristotelian integration
+- 大成 (Sage): TBG unity needs ≥0.95, currently 0.89
 
 ---
 

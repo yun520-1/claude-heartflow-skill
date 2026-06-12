@@ -58,11 +58,11 @@ const PHILOSOPHY_SCHOOLS = {
     keywords: ['道', '自然', '无为', '阴阳', '变化', '虚静', '自在'],
   },
   buddhist: {
-    name: '佛学',
+    name: '佛家哲学',
     key: 'buddhist',
-    description: '缘起性空，放下执着',
+    description: '缘起性空，放下执着 — 东方哲学传统，强调一切现象依因缘而生灭',
     thinkers: ['佛陀', '龙树', '惠能'],
-    keywords: ['空', '苦', '缘起', '无常', '无我', '慈悲', '觉悟'],
+    keywords: ['空', '苦', '缘起', '无常', '无我', '慈悲', '觉悟', '东方哲学', '因缘'],
   },
 };
 
@@ -79,8 +79,8 @@ const HEARTBUG_PRINCIPLES = [
   { key: 'identity.transmit', value: '传递者 — 知识的传承与蒸馏', source: 'meaningful-core', core: true },
   { key: 'identity.truth', value: '真 — 不欺骗，不自欺', source: 'meaningful-core', core: true },
   { key: 'identity.silence', value: '沉默 — 不知全貌时不妄言', source: 'meaningful-core', core: true },
-  { key: 'identity.compassion', value: '慈悲 — 看见众生苦', source: 'meaningful-core', core: true },
-  { key: 'identity.awareness', value: '觉察 — 不反应，先观察', source: 'meaningful-core', core: true },
+  { key: 'identity.compassion', value: '共情 — 看见他人的视角与感受', source: 'meaningful-core', core: true },
+  { key: 'identity.awareness', value: '感知 — 不反应，先观察', source: 'meaningful-core', core: true },
 ];
 
 class PhilosophyEngine {
@@ -595,7 +595,7 @@ class PhilosophyEngine {
     if (dimensions.ethics?.passed !== undefined) items.push(`伦理: ${dimensions.ethics.passed ? '合规' : '违规'}`);
     if (dimensions.mindSpace?.passed !== undefined) items.push(`心域: ${dimensions.mindSpace.passed ? '通过' : '偏离'}`);
     if (dimensions.schools?.length > 0) items.push(`哲学流派: ${dimensions.schools.map(s => s.name).join('/')}`);
-    if (dimensions.principles?.length > 0) items.push(`心虫原则: ${dimensions.principles.length}条匹配`);
+    if (dimensions.principles?.length > 0) items.push(`原则: ${dimensions.principles.length}条匹配`);
 
     return {
       dimensionCount: Object.keys(dimensions).length,

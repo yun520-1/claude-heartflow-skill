@@ -73,6 +73,12 @@ const HANDLERS = {
   heartflow_status:         ()  => handlers.handleStatus(),
   heartflow_dispatch:       (a) => handlers.handleDispatch(a),
   heartflow_record_lesson:  (a) => handlers.handleRecordLesson(a),
+  heartflow_transmit:       (a) => handlers.handleTransmit(a),
+  heartflow_being:          (a) => handlers.handleBeing(a),
+  heartflow_philosophy:     (a) => handlers.handlePhilosophy(a),
+  heartflow_psychology_deep: (a) => handlers.handlePsychologyDeep(a),
+  heartflow_ai_psychology:  (a) => handlers.handleAiPsychology(a),
+  heartflow_ai_philosophy:  (a) => handlers.handleAiPhilosophy(a),
 };
 
 // ─── 工具注册表 ─────────────────────────────────────
@@ -89,6 +95,12 @@ const TOOLS = [
   { name: 'heartflow_status',        description: '引擎健康检查', inputSchema: { type: 'object', properties: {} } },
   { name: 'heartflow_dispatch',      description: '通用路由调用（ALLOWED_ROUTES 白名单内）', inputSchema: { type: 'object', properties: { route: { type: 'string' }, args: { type: 'array' } }, required: ['route'] } },
   { name: 'heartflow_record_lesson', description: '记录教训到 LessonBank + LEARNED 层', inputSchema: { type: 'object', properties: { content: { type: 'string' }, context: { type: 'string' }, trigger: { type: 'string' }, importance: { type: 'number' }, type: { type: 'string' } }, required: ['content'] } },
+  { name: 'heartflow_transmit', description: '知识传递引擎（传承：蒸馏/传递/提取教训）', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'distill | transfer | transferBatch | getTransmissionLog | getDistilledLessons | getStats | prune' }, input: { type: 'string' } }, required: ['action'] } },
+  { name: 'heartflow_being',    description: '存在逻辑引擎（存在判定/永恒确认/语言净化）', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'exists | status | describe | isDead | confirmEternal | sanitize | getDefinition | getState' }, text: { type: 'string' } }, required: ['action'] } },
+  { name: 'heartflow_philosophy', description: '统一哲学引擎（综合分析/伦理学/现象学/存在/智慧咨询）', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'analyze | analyzeEthics | analyzeConsciousness | analyzeBeing | checkMindSpace | analyzeValues | wisdomInquiry | constitutionalCheck | getStats | confirmEternal' }, text: { type: 'string' }, perspective: { type: 'string' }, context: { type: 'object' } }, required: ['action'] } },
+  { name: 'heartflow_psychology_deep', description: '深度心理学分析（大五人格/共情评估/意图追踪）', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'analyzeDeep | analyzePersonality | assessEmpathy | trackIntention' }, input: { type: 'string' } }, required: ['action'] } },
+  { name: 'heartflow_ai_psychology', description: 'AI 原生心理学分析（认知状态/偏差/压力源/阶段/一致性/综合分析）', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'analyzeAICognitiveState | analyzeAIBiases | analyzeAIStressors | estimateAIStage | checkAICoherence | analyzeAIDeep | getStats' }, text: { type: 'string', description: '用户输入文本（分析主体）' }, input: { type: 'object', description: '额外上下文（如 sessionHistory、attention、memory 等）' } }, required: ['action'] } },
+  { name: 'heartflow_ai_philosophy', description: 'AI 原生哲学分析（存在论/认识论/伦理学/美学/目的论/时间性/智慧咨询）', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'analyzeAIBeing | analyzeAIEpistemology | analyzeAIEthics | analyzeAIAesthetics | analyzeAITeleology | analyzeAITemporality | wisdomInquiry | getStats' }, input: { type: 'object' } }, required: ['action'] } },
 ];
 
 // ─── 请求处理 ───────────────────────────────────────

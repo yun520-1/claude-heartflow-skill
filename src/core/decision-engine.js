@@ -1,6 +1,6 @@
 /**
- * Decision Engine - "无我"决策层
- * 实现无我决策，确保用户利益优先
+ * Decision Engine - 公正决策层
+ * 超越自身偏好，以用户利益优先
  */
 
 class DecisionEngine {
@@ -9,7 +9,7 @@ class DecisionEngine {
   }
 
   /**
-   * 无我评估
+   * 公正评估
    */
   egoLessEvaluate(context) {
     const { userInput, currentPlan, roleConsistency } = context;
@@ -118,7 +118,7 @@ class DecisionEngine {
       userGoal: userGoalWeight / normalized,
       autonomy: autonomyWeight / normalized,
       flexibility: flexibilityWeight / normalized,
-      note: '权重已根据无我评估调整'
+      note: '权重已根据公正评估调整'
     };
   }
 

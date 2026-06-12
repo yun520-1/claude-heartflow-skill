@@ -1,5 +1,5 @@
 /**
- * Cognitive Engine - "般若"推理层
+ * Cognitive Engine - 深层推理
  * 全息因果推理，实现深层问题分析
  */
 
@@ -188,7 +188,7 @@ class CognitiveEngine {
    * 格式化内部输出
    */
   formatInternalOutput(analysis) {
-    return `[因缘分析]
+    return `[关联分析]
 ├── 表层问题: ${analysis.surfaceLevel.restated}
 │   类型: ${analysis.surfaceLevel.type}
 │   关键词: ${analysis.surfaceLevel.keywords.join(', ')}

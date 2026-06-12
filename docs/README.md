@@ -140,7 +140,7 @@
 **Core Features / 核心功能**:
 - **Prereflective Self-Awareness Detector** / 前反思自我意识检测器
   - For-me-ness assessment / 为我性评估
-  - Non-objectifying awareness / 非对象化觉察
+  - Non-objectifying awareness / 非对象化感知
   - Experiential thickness measurement / 体验厚度测量
 - **Temporal Consciousness Analyzer** / 时间意识结构分析器
   - Cinematic/Retentional/Extensional model identification / 三种模型识别
@@ -148,7 +148,7 @@
 - **Emotion Temporal Structure Mapping** / 情绪时间结构映射
   - Rise/peak/decay/retention coefficients / 上升/峰值/消退/滞留系数
 - **15-min Integration Exercise** / 15 分钟整合练习
-  - Prereflective-temporal awareness practice / 前反思 - 时间觉察练习
+  - Prereflective-temporal awareness practice / 前反思 - 时间感知练习
 
 **Theoretical Sources / 理论来源**:
 - SEP: Self-Consciousness (Phenomenological Approaches)
@@ -176,7 +176,7 @@
   - 5 types of interventions / 5 类干预
 - **Body-Environment Coupling** / 身体 - 环境耦合检测
 - **15-min Practice** / 15 分钟练习
-  - Prediction awareness exercise / 预测觉察练习
+  - Prediction awareness exercise / 预测感知练习
 
 **Theoretical Contributions / 理论贡献**:
 - First complete integration of SEP Three Emotion Traditions with Predictive Processing
@@ -260,7 +260,7 @@
 | **v5.0.1** | Emotion Theory Integration / 情绪理论整合 | Three traditions, Four challenges / 三大传统，四大挑战 |
 | **v5.0.0** | Phenomenological Self-Consciousness / 现象学自我意识 | Six-level model, Temporal depth / 六层模型，时间深度 |
 | **v4.9.0** | Collective Emotion Phenomenology / 集体情绪现象学 | 5 emotion types, Walther conditions / 5 种类型，Walther 条件 |
-| **v4.8.0** | Prereflective & We-Intention / 前反思与 We-Intention | Pre-reflective awareness, Trust framework / 前反思觉察，信任框架 |
+| **v4.8.0** | Prereflective & We-Intention / 前反思与 We-Intention | Pre-reflective awareness, Trust framework / 前反思感知，信任框架 |
 | **v4.7.0** | Temporal Consciousness / 时间意识 | Triadic structure, Temporal depth / 三重结构，时间深度 |
 | **v4.6.0** | Social Identity & Collective Emotion / 社会认同与集体情绪 | Social identity, Collective emotion types / 社会认同，集体情绪类型 |
 | **v4.5.0** | Predictive Processing & Embodied Cognition / 预测加工与具身认知 | Prediction error, Body scanning / 预测误差，身体扫描 |
@@ -415,7 +415,7 @@ const response = await flow.respond(userInput, analysis);
    - Computational implementation of phenomenological concepts
    - 现象学概念的计算实现
    - Pre-reflective awareness, temporal consciousness
-   - 前反思觉察，时间意识
+   - 前反思感知，时间意识
 
 2. **Predictive Emotion Modeling** / 预测情绪建模
    - Free energy principle applied to emotion

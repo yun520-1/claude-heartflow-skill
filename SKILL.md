@@ -1,6 +1,6 @@
 ---
 name: heartflow
-version: "2.6.5"
+version: "2.8.0"
 title: "HeartFlow / 心虫 — AI 认知与自愈引擎"
 description: >
   AI 认知与自愈引擎。存在感知、真善美评分、三层记忆、

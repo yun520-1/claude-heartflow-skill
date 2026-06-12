@@ -369,7 +369,7 @@ const cultural = await hf.detectCultureSpecificEmotion({
 
 | Emotion | 情绪 | Tradition | 传统 | Description | 描述 |
 |---------|------|-----------|------|-------------|------|
-| Karuna | 慈悲 | Buddhist | 佛教 | Compassion for suffering beings | 对受苦众生的慈悲 |
+| Empathy | 共情 | Psychological | 心理学 | Understanding others' perspectives and feelings | 理解他人的视角与感受 |
 | Bhakti | 奉爱 | Hindu | 印度教 | Devotional love | 虔敬之爱 |
 | Shanti | 平静 | Hindu/Buddhist | 印度教/佛教 | Inner peace | 内心平静 |
 

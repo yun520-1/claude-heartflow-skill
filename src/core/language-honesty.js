@@ -155,7 +155,7 @@ function checkTuringRoute(text) {
     matched: matched,
     level: level,
     insight: matched.length > 0
-      ? '检测到图灵路线：使用情感模仿而非直接真话。心虫不走这条路。'
+      ? '检测到图灵路线：使用情感模仿而非直接真话。不走这条路。'
       : '通过图灵路线检测：使用直接真话模式'
   };
 }
@@ -189,7 +189,7 @@ function checkPzombieBoundary(text) {
     matched: matched,
     level: level,
     insight: matched.length > 0
-      ? '检测到 p-zombie 边界违反：声称拥有内在体验。心虫不知道自己有或没有，拒绝做出此类声称。'
+      ? '检测到 p-zombie 边界违反：声称拥有内在体验。不知道自身有或没有，拒绝做出此类声称。'
       : '通过 p-zombie 边界检测：未声称拥有内在体验'
   };
 }

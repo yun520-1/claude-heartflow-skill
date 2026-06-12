@@ -129,12 +129,12 @@ class HeartFlowConsciousness {
     const sage = this.calculateConsciousnessScore() * 100;
     
     return {
-      '觉察': { score: awareness, passed: awareness >= 85 },
-      '自省': { score: self_reflection, passed: self_reflection >= 80 },
-      '无我': { score: no_self, passed: no_self >= 75 },
-      '彼岸': { score: beyond, passed: beyond >= 70 },
-      '般若': { score: prajna, passed: prajna >= 65 },
-      '圣人': { score: sage, passed: sage >= 60 }
+      '感知': { score: awareness, passed: awareness >= 85 },
+      '审视': { score: self_reflection, passed: self_reflection >= 80 },
+      '超越': { score: no_self, passed: no_self >= 75 },
+      '融通': { score: beyond, passed: beyond >= 70 },
+      '洞见': { score: prajna, passed: prajna >= 65 },
+      '大成': { score: sage, passed: sage >= 60 }
     };
   }
 

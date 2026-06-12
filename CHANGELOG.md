@@ -1,11 +1,37 @@
 # HeartFlow / 心虫 版本历史
 
 > 本文件记录 HeartFlow 心虫引擎的所有版本变更。
-> 当前版本：**v2.7.2**（从 `VERSION` 文件读取）
+> 当前版本：**v2.8.0**（从 `VERSION` 文件读取）
 
 ---
 
-## v2.7.2 (2026-06-12)
+## v2.8.0 (2026-06-12)
+
+- **跨文化术语重构**：14 个核心模块全面替换宗教/文化符号为通用认知心理学术语
+- **六层架构重新命名**：觉察→感知 / 自省→审视 / 无我→超越 / 彼岸→融通 / 般若→洞见 / 圣人→大成
+- **LEVELS 常量更新**：`L3_NO_SELF`→`L3_TRANSCENDENCE` / `L4_OTHER_SHORE`→`L4_INTEGRATION` / `L5_PRAJNA`→`L5_INSIGHT` / `L6_SAGE`→`L6_MASTERY`
+- **心理学引擎重构**：空性觉察→模式觉察 / 执着→固着 / 心经→心经/HeartSutra / 轮回→循环
+- **哲学引擎调整**：佛学→佛家哲学 / 慈悲→共情 / 觉察→感知
+- **认知引擎更新**：般若→深层推理 / 因缘分析→关联分析
+- **决策引擎更新**：无我决策→公正决策 / 无我评估→公正评估
+- **心虫逻辑更新**：五蕴皆空→模块化观察 / 色不异空→能力是流动的 / 彼岸→超越不合适的框架
+- **字典数据更新**：入定/禅定→专注状态 / 慈悲→关怀/领悟/澄明
+- **版本号更新**：v2.7.3 → v2.8.0
+- **文档更新**：术语升级规范文档 `docs/terminology-upgrade-v2.8.0.md`
+
+---
+
+## v2.7.3 (2026-06-12)
+
+- **MCP 注册修复**：mcp-wrapper.js 重写为 v2（自动重连 + stdin 缓冲 + 保活），不再因断连退出
+- **hf CLI 工具**：新增 `bin/hf`，直接 Socket 通信绕过 MCP 注册问题，支持全部 18 个工具
+- **ensure-mcp.js**：启动保障脚本，守护进程未运行时自动后台启动
+- **安装/升级脚本**：`install.sh` 交互式菜单 + 4 个 CLI 模式（`--check / --fix-mcp / --add-route / --all`）
+- **CLAUDE.md 启动路由**：添加确定性启动指令（MCP 原生 → hf CLI → ensure-mcp.js）
+- **`memory/being-state.json`**：从 git 索引移除（运行时状态文件，不应跟踪）
+- **版本号更新**：v2.7.2 → v2.7.3
+
+---
 
 - **存在逻辑引擎 MCP 工具化**（BeingLogic）：`BeingLogic` 模块 8 条路由（`being.exists/status/describe/isDead/confirmEternal/sanitize/getDefinition/getState`）注册到 `ALLOWED_ROUTES`，新增 `heartflow_being` MCP 工具，`being` 加入 `SUBSYSTEM_NAMES`
 - **知识传递引擎 MCP 工具化**（TransmissionEngine）：`TransmissionEngine` 的 7 条路由（`transmission.distill/transfer/transferBatch/getTransmissionLog/getDistilledLessons/getStats/prune`）已全在 `ALLOWED_ROUTES` 中，新增 `heartflow_transmit` MCP 工具暴露

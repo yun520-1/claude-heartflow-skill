@@ -213,7 +213,7 @@ class MetaEngine {
       reasons.push('用户情绪偏低，需要情绪调节');
     }
     if (state.personality_values.introspection > 7) {
-      reasons.push('用户自省能力强，适合深度引导');
+      reasons.push('用户反思能力强，适合深度引导');
     }
     if (strategy.key === 'flow_引导') {
       reasons.push('当前任务适合心流引导');

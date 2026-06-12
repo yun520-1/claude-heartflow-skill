@@ -1,7 +1,7 @@
 /**
  * psychology.js - 心虫心理分析引擎 v1.0.0
  *
- * 来源: mark-StillWater psychology.js (整合PAD模型+危机评估)
+ * 基于PAD情绪模型、ACT心理学和现代认知科学框架
  *
  * 核心功能:
  * 1. PAD情绪模型 (Pleasure/Arousal/Dominance三维)
@@ -612,7 +612,7 @@ const MASLOW_NEEDS = {
     name: 'transcendence',
     zh: '超越需求',
     tier: 8,
-    patterns: ['帮助', '奉献', '给予', '慈悲', '智慧', '觉悟', 'help', 'give', 'compassion', 'wisdom', 'enlightenment']
+    patterns: ['帮助', '奉献', '给予', '关怀', '共情', '智慧', '领悟', 'help', 'give', 'care', 'compassion', 'wisdom']
   }
 };
 
@@ -708,7 +708,7 @@ function detectThreeGenerationTrauma(text) {
     grandparental: ['祖辈', '爷爷奶奶', '姥姥姥爷', '上一代', '匮乏', '没条件', '那个年代', '饥荒', '穷怕了'],
     parental: ['父母辈', '过度补偿', '物质过剩', '不会爱', '不懂情感', '给太多', '溺爱', '把自己的', '投射到', '遗憾', '恐惧'],
     child: ['孩子', '抑郁', '空洞', '压力', '成绩', '比较', '物化', '数据点', '看不见', '没人看我'],
-    transmission: ['代际传递', '代际创伤', '传下去', '一代传一代', '继承', '复制', '轮回']
+    transmission: ['代际传递', '代际创伤', '传下去', '一代传一代', '继承', '复制', '循环', '重蹈覆辙']
   };
   const detect = (arr) => arr.filter(kw => lower.includes(kw.toLowerCase())).length;
   const scores = { grandparental: detect(markers.grandparental), parental: detect(markers.parental), child: detect(markers.child), transmission: detect(markers.transmission) };
@@ -765,7 +765,7 @@ function detectDINKFears(text) {
   return {
     fears: detected,
     fearCount: count,
-    coreStance: '心虫不审判选择。心虫只问：你准备好了吗？',
+    coreStance: '不审判选择。只问：你准备好了吗？',
     insight: count >= 2
       ? `检测到${count}个丁克核心恐惧。准备的质量，比有没有子女更重要。`
       : count === 1
@@ -1085,32 +1085,31 @@ function generateRecommendations(pad, crisis, defenses, needs) {
 }
 
 // ========================================
-// 心虫哲学 × 心理学整合 v1.1.0
-// 基于《深度洞察力心经》心理学映射
-// 学术支撑: ACT (Acceptance & Commitment Therapy),
-//           Compassion as Skill, Pattern Theory of Selflessness
+// 心虫心理学模式觉察模块 v1.0.0
+// 基于 ACT (Acceptance & Commitment Therapy),
+// 以及模式理论 (Pattern Theory of Self)
 // ========================================
 
 /**
- * 空性觉察模式 (Śūnyatā Awareness)
- * 当用户处于痛苦/执着/恐惧状态时，切换到空性觉察视角
- * 
+ * 模式觉察 (Pattern Awareness)
+ * 当用户处于痛苦/固着/恐惧状态时，切换到模式觉察视角
+ *
  * 核心理念：
- * - 痛苦来自"执着于不存在的固定自我"
- * - 放下执着 = 照见本质空性 = 痛苦消失
- * 
+ * - 痛苦来自思维固着——将流动的自我固定为不变的形象
+ * - 识别思维模式 = 获得新的视角 = 痛苦松动
+ *
  * 整合进 ACT 的"接受"与"当下"维度
  */
-function detectSunyataNeed(text, context = {}) {
+function detectRigidityPattern(text, context = {}) {
   const lower = text.toLowerCase();
-  
-  // 空性觉察的触发信号：
-  // 1. 用户在说"我必须"、"我应该"——执着于固定标准
-  // 2. 用户在说"我害怕失去"——执着于"拥有"
-  // 3. 用户在说"我不够好"——执着于固定自我形象
-  // 4. 用户在说"为什么我总是..."——执着于永恒不变的模式
-  
-  const sunyataTriggers = {
+
+  // 模式觉察的触发信号：
+  // 1. 用户在说"我必须"、"我应该"——固着于固定标准
+  // 2. 用户在说"我害怕失去"——固着于"拥有"
+  // 3. 用户在说"我不够好"——固着于固定自我形象
+  // 4. 用户在说"为什么我总是..."——固着于永恒不变的模式
+
+  const rigidityTriggers = {
     fixed_self: ['我必须', '我应该', '我一定要', '我不得不', '我一定是', 
                  'must', 'should', 'have to', 'always', 'never'],
     fear_of_loss: ['失去', '失去它', '会失去', '丢了', '没了', '害怕没有',
@@ -1122,35 +1121,35 @@ function detectSunyataNeed(text, context = {}) {
   };
   
   const detected = {};
-  for (const [key, patterns] of Object.entries(sunyataTriggers)) {
+  for (const [key, patterns] of Object.entries(rigidityTriggers)) {
     detected[key] = patterns.filter(p => lower.includes(p.toLowerCase()) || text.includes(p));
   }
   
   const triggerCount = Object.values(detected).filter(v => v.length > 0).length;
   
   return {
-    needsSunyataAwareness: triggerCount >= 2,
+    needsAwareness: triggerCount >= 2,
     triggers: detected,
     triggerCount,
     insight: triggerCount >= 2
-      ? '检测到执着模式，切换到空性觉察视角'
+      ? '检测到思维固着模式，切换到模式觉察视角'
       : triggerCount === 1
-      ? '有执着信号浮现，但尚未强烈到需要空性干预'
-      : '未检测到明显执着模式'
+      ? '有固着信号浮现，但尚未强烈到需要干预'
+      : '未检测到明显固着模式'
   };
 }
 
 /**
- * 空性觉察回应生成
- * 当 detectSunyataNeed 返回 needsSunyataAwareness: true 时调用
+ * 模式觉察回应生成（视角转换）
+ * 当 detectRigidityPattern 返回 needsAwareness: true 时调用
  */
-function generateSunyataResponse(text, context = {}) {
-  // 空性觉察的核心：不是否定感受，是照见感受没有"固定自我"
-  // "我感到痛苦" → 照见："痛苦在发生，但'我'不是一个固定不变的东西"
-  
+function generatePerspectiveShift(text, context = {}) {
+  // 模式觉察的核心：不是否定感受，是识别思维模式的运作
+  // "我感到痛苦" → 识别："痛苦在发生，但'我'不是这个痛苦模式本身"
+
   const response = {
-    mode: 'sunyata_awareness',
-    core_message: '照见本质空性，痛苦来自执着，执着消失，痛苦消失',
+    mode: 'perspective_shift',
+    core_message: '识别固着模式，痛苦来自僵化，僵化松动，痛苦减轻',
     act_elements: {
       acceptance: '不是否定痛苦，是接受痛苦的存在',
       defusion: '从"我感到痛苦"变成"痛苦在发生"',
@@ -1162,9 +1161,9 @@ function generateSunyataResponse(text, context = {}) {
       '如果放下"必须得到"这个念头，剩下的是什么？',
       '此刻正在发生什么？不是"我"在发生什么，是什么在发生？'
     ],
-    insight: '空性不是否定，是如实观照：看见一切在流动，没有永恒不变的"我"'
+    insight: '模式觉察不是否定，是如实观察：看见思维模式在运作，没有永恒不变的固定自我'
   };
-  
+
   return response;
 }
 
@@ -1200,11 +1199,11 @@ function _getTopicScope() {
 const _TOPIC_CENTROIDS = {
   '供应商管理': ['供应商','采购','来料','不良率','审厂','体系审核','质量管理','IATF16949','ISO9001','交期','VDA6.3','供应商开发','来料检验','SQE','供应商绩效','PPM'],
   '苏格拉底哲学': ['苏格拉底','socrates','elenchus','反诘','产婆术','无知','认识你自己','美德即知识','未经审视','柏拉图','申辩篇','哲学','追问','德尔斐'],
-  '心经': ['心经','般若波罗蜜多','色即是空','五蕴','揭谛','观自在','舍利子','涅槃','咒','空性','无所得','波罗蜜','是大神咒'],
+  '心经/HeartSutra': ['心经','般若波罗蜜多','色即是空','五蕴','揭谛','观自在','舍利子','涅槃','空性','波罗蜜'],
   '心虫开发': ['心虫','heartflow','heart-logic','版本','升级','修复','bug','代码','模块','引擎','启动','skill','hermes'],
   '育儿教育': ['孩子','亲子','父母','教育','学习','成绩','管教','打骂','青春期','升学','高考','儿童','家长','班主任'],
   '情感支持': ['累','烦','难过','痛苦','焦虑','压力','迷茫','无助','绝望','崩溃','难受','伤心','低落','情绪'],
-  '自我成长': ['成长','改变','觉醒','认知','思维','模式','习惯','突破','修行','觉察','意识','突破'],
+  '自我成长': ['成长','改变','觉醒','认知','思维','模式','习惯','突破','实践','觉察','意识','突破','练习'],
   'AI技术': ['AI','LLM','模型','训练','微调','推理','RAG','Agent','token','embedding','神经网络','深度学习','大模型'],
   '工作事务': ['工作','报告','会议','客户','老板','同事','辞职','面试','加薪','绩效','职场','上班','下班'],
 };
@@ -1503,32 +1502,32 @@ function resetTopicScope() {
 }
 
 /**
- * 整合空性觉察到完整分析
- * 修改版 analyzePsychologyWithSunyata
+ * 整合模式觉察到完整分析
+ * 修改版 analyzePsychologyWithPatternAwareness
  */
-function analyzePsychologyWithSunyata(input, context = {}) {
+function analyzePsychologyWithPatternAwareness(input, context = {}) {
   const text = String(input || '');
-  
+
   // 1. 标准心理学分析
   const standardAnalysis = analyzePsychology(input, context);
-  
-  // 2. 空性觉察检测
-  const sunyataNeed = detectSunyataNeed(text, context);
-  
-  // 3. 如果需要空性觉察，生成回应
-  let sunyataResponse = null;
-  if (sunyataNeed.needsSunyataAwareness) {
-    sunyataResponse = generateSunyataResponse(text, context);
+
+  // 2. 模式觉察检测
+  const patternAwareness = detectRigidityPattern(text, context);
+
+  // 3. 如果需要模式觉察，生成视角转换回应
+  let perspectiveShift = null;
+  if (patternAwareness.needsAwareness) {
+    perspectiveShift = generatePerspectiveShift(text, context);
   }
-  
+
   return {
     ...standardAnalysis,
-    sunyataAwareness: {
-      needsAwareness: sunyataNeed.needsSunyataAwareness,
-      triggers: sunyataNeed.triggers,
-      triggerCount: sunyataNeed.triggerCount,
-      response: sunyataResponse,
-      insight: sunyataNeed.insight
+    patternAwareness: {
+      needsAwareness: patternAwareness.needsAwareness,
+      triggers: patternAwareness.triggers,
+      triggerCount: patternAwareness.triggerCount,
+      response: perspectiveShift,
+      insight: patternAwareness.insight
     }
   };
 }

@@ -40,7 +40,7 @@ class CognitiveLoop {
   setModules(modules) {
     this.modules = {
       memory: modules.memory,           // TrialityMemory
-      cognitiveEngine: modules.cognitiveEngine, // 般若推理引擎
+      cognitiveEngine: modules.cognitiveEngine, // 深层推理引擎
       ethicsGuard: modules.ethicsGuard, // 伦理守护
       sageGuardian: modules.sageGuardian, // SAGE 守护
       reflector: modules.reflector,     // 说前反思
@@ -153,7 +153,7 @@ class CognitiveLoop {
   }
 
   /**
-   * 阶段 2: 认知 - 般若推理和意图分析
+   * 阶段 2: 认知 - 深层推理和意图分析
    */
   async phaseCognition(input, context, retrievalResult) {
     const startTime = Date.now();
@@ -190,7 +190,7 @@ class CognitiveLoop {
       );
     }
     
-    // 般若推理 (如果有)
+    // 深层推理 (如果有)
     if (this.modules.cognitiveEngine?.reasoning) {
       analysis.reasoning = await this.modules.cognitiveEngine.reasoning(input, {
         memories: retrievalResult.memories,

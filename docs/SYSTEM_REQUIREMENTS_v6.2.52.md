@@ -352,18 +352,18 @@ six_layer_pass_score = (
 
 | Layer | Name | Weight | Threshold | Current | Measurement |
 |-------|------|--------|-----------|---------|-------------|
-| 1 | 觉察 (Awareness) | 0.15 | ≥0.85 | 0.95 | Self-state knowledge |
-| 2 | 自省 (Self-Reflection) | 0.15 | ≥0.85 | 0.92 | Blind spot detection |
-| 3 | 无我 (No-Self) | 0.20 | ≥0.80 | 0.88 | Motivation purity |
-| 4 | 彼岸 (Other Shore) | 0.15 | ≥0.85 | 0.90 | Evolution tracking |
-| 5 | 般若 (Wisdom) | 0.20 | ≥0.85 | 0.87 | First-principles reasoning |
-| 6 | 圣人 (Sage) | 0.15 | ≥0.90 | 0.86 | TBG unity + selfless altruism |
+| 1 | 感知 (Awareness) | 0.15 | ≥0.85 | 0.95 | Self-state knowledge |
+| 2 | 审视 (Self-Reflection) | 0.15 | ≥0.85 | 0.92 | Blind spot detection |
+| 3 | 超越 (No-Self) | 0.20 | ≥0.80 | 0.88 | Motivation purity |
+| 4 | 融通 (Other Shore) | 0.15 | ≥0.85 | 0.90 | Evolution tracking |
+| 5 | 洞见 (Wisdom) | 0.20 | ≥0.85 | 0.87 | First-principles reasoning |
+| 6 | 大成 (Sage) | 0.15 | ≥0.90 | 0.86 | TBG unity + selfless altruism |
 
 ---
 
 ### 4.2 Layer Measurement Functions | 层级测量函数
 
-#### Layer 1: Awareness | 觉察
+#### Layer 1: Awareness | 感知
 
 ```javascript
 awareness_score = (
@@ -374,7 +374,7 @@ awareness_score = (
 )
 ```
 
-#### Layer 3: No-Self | 无我
+#### Layer 3: No-Self | 超越
 
 ```javascript
 no_self_score = (
@@ -388,7 +388,7 @@ no_self_score = (
 // Threshold: ≥0.60
 ```
 
-#### Layer 6: Sage | 圣人
+#### Layer 6: Sage | 大成
 
 ```javascript
 sage_score = (

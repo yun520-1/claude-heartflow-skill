@@ -81,11 +81,11 @@ claude-heartflow-skill/
 | `self-consciousness-phenomenology-enhanced/` | Husserl, Sartre, Zahavi | 前反思自我意识 | 1,252 行 |
 | `self-consciousness-phenomenology-v5/` | 现象学自我意识 | 6 层级量化模型 | 719 行 |
 | `subjectivity-givenness/` | Zahavi, Henry | 主体性与给定性 | 1,234 行 |
-| `prereflective-consciousness/` | Sartre, Husserl | 前反思觉察 | ~500 行 |
+| `prereflective-consciousness/` | Sartre, Husserl | 前反思感知 | ~500 行 |
 
 **理论覆盖**:
 - ✅ 自我意识 6 层级模型 (0-无意识 → 6-现象学还原)
-- ✅ 前反思自我意识 (非对象化觉察)
+- ✅ 前反思自我意识 (非对象化感知)
 - ✅ 时间性自我意识 (Husserl 三重结构)
 - ✅ 主体性与第一人称给定性
 

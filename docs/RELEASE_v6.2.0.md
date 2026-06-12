@@ -45,12 +45,12 @@ const result = engine.deduce('User question', context);
 
 | Element | 要素 | 要素 | 요소 | Formula |
 |---------|------|------|------|---------|
-| Awareness | 觉察 | 覚察 | 각성 | `(1-n)×(1-j)×(1-a)` |
-| Self-Reflection | 自省 | 自省 | 성찰 | `(1-d)×(1-s)×r` |
-| No-Self | 无我 | 無我 | 무아 | `1-sr-pp` |
-| Other Shore | 彼岸 | 彼岸 | 피안 | `1-sl` |
-| Prajna | 般若 | 般若 | 반야 | `w/(k+w)` |
-| Sage | 圣人 | 聖人 | 성인 | `(1-sb)×a` |
+| Awareness | 感知 | 覚察 | 각성 | `(1-n)×(1-j)×(1-a)` |
+| Self-Reflection | 审视 | 审视 | 성찰 | `(1-d)×(1-s)×r` |
+| No-Self | 超越 | 無我 | 무아 | `1-sr-pp` |
+| Other Shore | 融通 | 融通 | 피안 | `1-sl` |
+| Prajna | 洞见 | 洞见 | 반야 | `w/(k+w)` |
+| Sage | 大成 | 聖人 | 성인 | `(1-sb)×a` |
 
 **Comprehensive Awakening Index (CAI)**:
 ```
@@ -202,11 +202,7 @@ This release is based on the philosophical insights from:
 - **Taoism** - Other Shore, Natural Flow
 - **Phenomenology** - Direct Experience, Non-judgmental Awareness
 
-**感谢佛教、儒家、道家和现象学的哲学智慧！**
-
-**仏教、儒教、道教、現象学の哲学的知恵に感謝します！**
-
-**불교, 유교, 도교, 현상학의 철학적 지혜에 감사드립니다!**
+**感谢东西方哲学传统的智慧启迪！**
 
 ---
 

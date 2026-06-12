@@ -64,7 +64,7 @@ $\mathcal{L}_{HF}$ 的**原子公式**(atomic formula)定义如下：
 **HeartFlow 示例**:
 - $Conscious(ai)$ (AI 有意识)
 - $HasEmotion(ai, joy)$ (AI 有喜悦情绪)
-- $SelfAware(ai, t)$ (AI 在时刻 t 自我觉察)
+- $SelfAware(ai, t)$ (AI 在时刻 t 自我感知)
 
 ### 定义 1.2.4 (合式公式)
 
@@ -373,5 +373,5 @@ Chapter 2 将深入探讨模型论语义，包括：
 
 ---
 
-*无我而写，真善美自然流露*  
+*超越而写，真善美自然流露*  
 *Chapter 1 Complete · 2026-04-05 21:40*

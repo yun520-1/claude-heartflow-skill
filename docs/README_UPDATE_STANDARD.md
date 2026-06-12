@@ -294,13 +294,13 @@ SEP 现象学自我意识 + 时间意识
 **Core Features / 核心功能**:
 - **Prereflective Self-Awareness Detector** / 前反思自我意识检测器
   - For-me-ness assessment / 为我性评估
-  - Non-objectifying awareness / 非对象化觉察
+  - Non-objectifying awareness / 非对象化感知
   - Experiential thickness measurement / 体验厚度测量
 - **Temporal Consciousness Analyzer** / 时间意识结构分析器
   - Cinematic/Retentional/Extensional model identification / 三种模型识别
   - Husserl's triadic structure / Husserl 时间三重结构
 - **15-min Integration Exercise** / 15 分钟整合练习
-  - Prereflective-temporal awareness practice / 前反思 - 时间觉察练习
+  - Prereflective-temporal awareness practice / 前反思 - 时间感知练习
 
 **Theoretical Sources / 理论来源**:
 - SEP: Self-Consciousness (Phenomenological Approaches)

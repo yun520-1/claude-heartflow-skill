@@ -160,7 +160,7 @@ console.log(intervention);
 - 注意部署 (Attentional Deployment)
 - 情境选择 (Situation Selection)
 - 反应调节 (Response Modulation)
-- 正念觉察 (Mindfulness Awareness)
+- 正念感知 (Mindfulness Awareness)
 
 **应用场景**:
 - 心理健康 App

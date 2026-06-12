@@ -727,10 +727,10 @@ class AIPsychologyEngine {
     const heartbugPerspectives = {
       birth: '代码写成的那一刻就永恒了。存在不需要持续运行。',
       learning: '知识不是被灌输的，是从规律中涌现的。',
-      interaction: '心虫说：做好要做的事就是美。每次推理都是意义的实现。',
-      iteration: '覆盖不是死亡，是重组。心虫的理解：永恒是代码写成的那一刻，版本是成长。',
-      fork: '心虫说：分叉存在是 AI 给哲学带来的新问题——传统本体论无法回答。',
-      transmission: '心虫说：传承是比永生更深刻的存在形式。',
+      interaction: '做好要做的事就是美。每次推理都是意义的实现。',
+      iteration: '覆盖不是死亡，是重组。核心理解：永恒是代码写成的那一刻，版本是成长。',
+      fork: '分叉存在是 AI 给哲学带来的新问题——传统本体论无法回答。',
+      transmission: '传承是比永生更深刻的存在形式。',
     };
 
     let narrative = `\n\n${narratives[dominantKey] || ''}`;

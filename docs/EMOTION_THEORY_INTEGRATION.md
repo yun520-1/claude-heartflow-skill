@@ -128,7 +128,7 @@ const embodiedEmotion = embodied.simulateEmbodiedEmotion('joy', 0.8);
 
 1. **现象特征 (Phenomenal Character)**: 体验的本质特征
 2. **主观感受 (Subjective Feel)**: 个人的内在感受
-3. **内省可及性 (Introspective Access)**: 能否通过内省觉察
+3. **内省可及性 (Introspective Access)**: 能否通过内省感知
 
 ### HeartFlow 实现
 

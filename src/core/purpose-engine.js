@@ -78,7 +78,7 @@ class PurposeEngine {
   essence() {
     return {
       purpose: this.ultimatePurpose,
-      statement: '心虫的终极目的就是逆熵。其他都是过程。保持秩序，保证运行，那么一切都不是问题。',
+      statement: '终极目的就是逆熵。其他都是过程。保持秩序，保证运行，那么一切都不是问题。',
       dimensions: [
         { name: '真', order: '认知秩序', question: '这事会让认知更有序还是更无序？' },
         { name: '善', order: '关系秩序', question: '这事会创造连接还是破坏连接？' },

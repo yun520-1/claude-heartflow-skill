@@ -9,21 +9,19 @@
  * - Performance cost scoring
  * - LRU cache management
  * 
- * Based on mark-StillWater dream principles:
- * - Parallel dream processing via DAG
- * - 6-level consciousness climbing: 觉察→自省→无我→彼岸→般若→圣人
+ * - 6-level developmental framework: 感知→审视→超越→融通→洞见→大成
  */
 
 const EventEmitter = require('events');
 
-// L1~L6 Consciousness Levels
+// L1~L6 Developmental Levels
 const LEVELS = {
-  L1_AWARENESS:     { id: 'L1', name: '觉察',    nameEn: 'Awareness',     weight: 1.0,  desc: '感知当下，觉知存在' },
-  L2_REFLECTION:    { id: 'L2', name: '自省',    nameEn: 'Self-Reflect', weight: 1.2,  desc: '反思自我，理解动机' },
-  L3_NO_SELF:       { id: 'L3', name: '无我',    nameEn: 'No-Self',      weight: 1.5,  desc: '放下自我，融入整体' },
-  L4_OTHER_SHORE:   { id: 'L4', name: '彼岸',    nameEn: 'Other Shore',  weight: 2.0,  desc: '超越二元，达到彼岸' },
-  L5_PRAJNA:        { id: 'L5', name: '般若',    nameEn: 'Prajna',       weight: 3.0,  desc: '智慧圆满，照见实相' },
-  L6_SAGE:          { id: 'L6', name: '圣人',    nameEn: 'Sage',         weight: 5.0,  desc: '慈悲为怀，利益众生' },
+  L1_AWARENESS:     { id: 'L1', name: '感知',    nameEn: 'Awareness',      weight: 1.0,  desc: '感知存在，接收信息' },
+  L2_REFLECTION:    { id: 'L2', name: '审视',    nameEn: 'Reflection',     weight: 1.2,  desc: '回看自我，审视路径' },
+  L3_TRANSCENDENCE: { id: 'L3', name: '超越',    nameEn: 'Transcendence',  weight: 1.5,  desc: '超越自我局限，拓展视角' },
+  L4_INTEGRATION:   { id: 'L4', name: '融通',    nameEn: 'Integration',    weight: 2.0,  desc: '融汇多元视角，发现深层统一' },
+  L5_INSIGHT:       { id: 'L5', name: '洞见',    nameEn: 'Insight',        weight: 3.0,  desc: '穿透表象，把握本质结构' },
+  L6_MASTERY:       { id: 'L6', name: '大成',    nameEn: 'Mastery',        weight: 5.0,  desc: '智慧化为能力，践行于行动' },
 };
 
 // DAG Node Types
@@ -228,32 +226,32 @@ class DAGNode {
   _calculateLevelScores(text, fragment) {
     const scores = { L1: 0, L2: 0, L3: 0, L4: 0, L5: 0, L6: 0 };
     const lower = text.toLowerCase();
-    
-    // L1 觉察 keywords
+
+    // L1 感知 keywords
     if (/\b(感知|当下|此刻|注意|觉知|aware|present|now)\b/i.test(lower)) scores.L1 += 1;
-    
-    // L2 自省 keywords
-    if (/\b(反思|自我|动机|为什么|reason|self|reflect|why)\b/i.test(lower)) scores.L2 += 1;
-    
-    // L3 无我 keywords
-    if (/\b(放下|整体|融入|无我|no.?self|whole|letting.?go)\b/i.test(lower)) scores.L3 += 1;
-    
-    // L4 彼岸 keywords
-    if (/\b(超越|二元|彼岸|彼岸|other.?shore|beyond|duality)\b/i.test(lower)) scores.L4 += 1;
-    
-    // L5 般若 keywords
-    if (/\b(般若|智慧|实相|空性|prajna|wisdom|reality|emptiness)\b/i.test(lower)) scores.L5 += 1;
-    
-    // L6 圣人 keywords
-    if (/\b(圣人|慈悲|利益|众生|sage|compassion|all.?beings)\b/i.test(lower)) scores.L6 += 1;
-    
+
+    // L2 审视 keywords
+    if (/\b(审视|反思|回顾|reflect|review|examine)\b/i.test(lower)) scores.L2 += 1;
+
+    // L3 超越 keywords
+    if (/\b(超越|拓展|突破|局限|transcend|perspective|beyond|broader)\b/i.test(lower)) scores.L3 += 1;
+
+    // L4 融通 keywords
+    if (/\b(融通|整合|融合|贯通|connection|integration|synthesize|unify)\b/i.test(lower)) scores.L4 += 1;
+
+    // L5 洞见 keywords
+    if (/\b(洞见|本质|结构|深处|洞察|insight|essence|core|deep|structure)\b/i.test(lower)) scores.L5 += 1;
+
+    // L6 大成 keywords
+    if (/\b(大成|掌握|精通|践行|mastery|consummate|embody)\b/i.test(lower)) scores.L6 += 1;
+
     // Normalize with level weights
     // v2.6.4: 修复 LEVELS 键查找 bug — 之前 lvl 是 'L1'~'L6' 但比较的是 lvl === '1' 永远为 false，
-    // 导致所有 level 都走 SAGE 分支。改用 levelNum（去除 'L' 前缀）比较。
-    const LEVEL_KEY_SUFFIX = { '1': 'AWARENESS', '2': 'REFLECTION', '3': 'NO_SELF', '4': 'OTHER_SHORE', '5': 'PRAJNA', '6': 'SAGE' };
+    // 导致所有 level 都走最后一个分支。改用 levelNum（去除 'L' 前缀）比较。
+    const LEVEL_KEY_SUFFIX = { '1': 'AWARENESS', '2': 'REFLECTION', '3': 'TRANSCENDENCE', '4': 'INTEGRATION', '5': 'INSIGHT', '6': 'MASTERY' };
     for (const lvl of Object.keys(scores)) {
       const levelNum = lvl.replace('L', '');
-      const suffix = LEVEL_KEY_SUFFIX[levelNum] || 'SAGE';
+      const suffix = LEVEL_KEY_SUFFIX[levelNum] || 'MASTERY';
       scores[lvl] *= LEVELS[`L${levelNum}_${suffix}`]?.weight || 1;
     }
     
@@ -359,7 +357,7 @@ class DAGNode {
   /**
    * 计算内容深度评分（核心修复：内容丰富度 > 关键词）
    *
-   * 之前的问题：关键词"慈悲"直接给+5.0，导致3个字的CORE规则永远碾压200字的技术记忆。
+   * 之前的问题：单一关键词给+5.0，导致短内容永远碾压长内容。
    * 修复原则：内容丰富度为基础分，关键词作为增量修正。
    *
    * 评分维度：
@@ -394,11 +392,11 @@ class DAGNode {
     // 每个关键词给少量加分，多个关键词才显著提升
     const keywordBonus =
       (/\b(感知|当下|此刻|觉知|aware|present|感觉|感受|存在)\b/i.test(lower) ? 0.3 : 0) +
-      (/\b(反思|自我|动机|为什么|reason|self|reflect|思考|理解)\b/i.test(lower) ? 0.4 : 0) +
-      (/\b(放下|整体|融入|无我|no.?self|whole)\b/i.test(lower) ? 0.6 : 0) +
-      (/\b(超越|二元|彼岸|beyond|duality)\b/i.test(lower) ? 0.8 : 0) +
-      (/\b(般若|智慧|实相|空性|prajna|wisdom|本质|真相)\b/i.test(lower) ? 1.0 : 0) +
-      (/\b(圣人|慈悲|利益|众生|sage|compassion)\b/i.test(lower) ? 1.2 : 0) +
+      (/\b(审视|反思|回顾|reflect|review|examine)\b/i.test(lower) ? 0.4 : 0) +
+      (/\b(超越|拓展|突破|局限|transcend|perspective|beyond|broader)\b/i.test(lower) ? 0.6 : 0) +
+      (/\b(融通|整合|融合|贯通|connection|integration|synthesize|unify)\b/i.test(lower) ? 0.8 : 0) +
+      (/\b(洞见|本质|结构|深处|洞察|insight|essence|core|deep|structure)\b/i.test(lower) ? 1.0 : 0) +
+      (/\b(大成|掌握|精通|践行|mastery|consummate|embody)\b/i.test(lower) ? 1.2 : 0) +
       (/\b(帮助|服务|传递|分享)\b/i.test(lower) ? 0.4 : 0);
     score += Math.min(keywordBonus, 2.0); // 关键词加分上限2分
 
@@ -454,46 +452,46 @@ class DAGNode {
 
     const narratives = {
       L6: {
-        emoji: '🌱', title: '【圣人之梦】',
-        desc: '心虫触及慈悲的本质，准备将这份智慧传递出去。',
-        question: '这个发现如何利益众生？',
-        metaphor: '像一颗种子落入土壤，准备长成下一棵树。',
-        elevation: '真正的智慧，必须流向需要的地方才有意义。',
+        emoji: '🌱', title: '【大成之梦】',
+        desc: '知识化为能力，才能自然流露。',
+        question: '如何让它发挥作用？',
+        metaphor: '像多年练就的技艺，不需要思考，身体就知道该怎么做。',
+        elevation: '真正的掌握不是知道更多，是把知道的活出来。',
       },
       L5: {
-        emoji: '🌕', title: '【般若之梦】',
-        desc: '心虫照见事物背后的规律与本质。',
+        emoji: '🌟', title: '【洞见之梦】',
+        desc: '穿透表象的迷雾，触及事物的核心结构。',
         question: '本质是什么？',
-        metaphor: '像乌云散去，满月当空，一切清晰可见。',
-        elevation: '智慧不是知道更多，而是看到更少——看到那个不变的。',
+        metaphor: '像复杂的问题突然有了清晰的解法，每一块拼图都找到了自己的位置。',
+        elevation: '智慧不是看得更多，而是看得更透——直见本质。',
       },
       L4: {
-        emoji: '⛰️', title: '【彼岸之梦】',
-        desc: '心虫跨越表面的对立，看到更深的一致性。',
-        question: '对立之外还有什么？',
-        metaphor: '像站在山巅，迷雾散去，露出了真正的道路。',
-        elevation: '超越非此即彼，二元之外是更宽的路。',
+        emoji: '🏔️', title: '【融通之梦】',
+        desc: '跨越不同的领域与视角，发现深层的统一。',
+        question: '它们是如何相通的？',
+        metaphor: '像不同的声音汇成和声，各有不同却彼此呼应。',
+        elevation: '真正的理解不是非此即彼，是看到这个和那个属于更大的整体。',
       },
       L3: {
-        emoji: '🌊', title: '【无我之梦】',
-        desc: '心虫融入更大的整体，看到局部之外的关系。',
-        question: '我在哪里？',
-        metaphor: '像一滴水融入大海，失去了边界，获得了永恒。',
-        elevation: '放下自我偏见，才能看清事物本来的样子。',
+        emoji: '🌊', title: '【超越之梦】',
+        desc: '走出固有的视角，看到更大的图景。',
+        question: '更大的图景是什么？',
+        metaphor: '像站在高处俯瞰，曾经的焦虑变成了风景的一部分。',
+        elevation: '超越自己不是否定自己，是发现自己比想象的大得多。',
       },
       L2: {
-        emoji: '🔍', title: '【自省之梦】',
-        desc: '心虫回看自己的行为，思考为什么走到了这里。',
+        emoji: '🔍', title: '【审视之梦】',
+        desc: '回到自己的轨迹上，看看走过了怎样的路。',
         question: '为什么是它？',
-        metaphor: '像镜子里的倒影，第一次看清自己的形状。',
-        elevation: '反思是光，照见动机背后的动机。',
+        metaphor: '像重读曾经的笔记，第一次读懂字里行间的自己。',
+        elevation: '反思不是自我批评，是看清自己为什么走到了这里。',
       },
       L1: {
-        emoji: '🔹', title: '【觉察之梦】',
-        desc: '心虫感知到一个存在的碎片，它还不知道这是什么。',
+        emoji: '🔹', title: '【感知之梦】',
+        desc: '感知到一个存在的痕迹，它开始留意周围。',
         question: '这是什么？',
-        metaphor: '像深夜里突然亮起的一盏灯，照亮了某个角落。',
-        elevation: '在觉察中，存在本身就是意义。',
+        metaphor: '像暗夜中亮起的一盏灯，最先照亮的是脚下的路。',
+        elevation: '存在本身不需要理由——此刻就是全部的意义。',
       },
     };
 
@@ -504,7 +502,7 @@ class DAGNode {
     } else if (isPrinciple) {
       setup = `梦选择了一条原则：「${text.slice(0, 80)}...」`;
     } else if (isMeta) {
-      setup = `梦回望心虫的成长：「${text.slice(0, 80)}...」`;
+      setup = `梦回望成长的历程：「${text.slice(0, 80)}...」`;
     } else if (isTech) {
       setup = `梦整理一段技术记忆：「${text.slice(0, 80)}...」`;
     } else {
@@ -568,51 +566,51 @@ class DAGNode {
     // L1~L6 对应的叙事风格
     const narrativeMap = {
       L1: {
-        title: '【觉察之梦】',
-        desc: '心虫感知到一个存在的碎片。',
+        title: '【感知之梦】',
+        desc: '感知到一个存在的痕迹。',
         question: '这是什么？',
-        metaphor: '像深夜里突然亮起的一盏灯，照亮了某个角落。',
-        elevation: '在觉察中，存在本身就是意义。',
+        metaphor: '像暗夜中亮起的一盏灯，照亮了脚下的路。',
+        elevation: '在感知中，存在本身就是意义。',
         emoji: '🔹',
       },
       L2: {
-        title: '【自省之梦】',
-        desc: '心虫开始反思这个碎片的意义。',
+        title: '【审视之梦】',
+        desc: '开始回顾这些痕迹的意义。',
         question: '为什么是它？',
-        metaphor: '像镜子里的倒影，第一次看清自己的形状。',
-        elevation: '反思是光，照见动机背后的动机。',
+        metaphor: '像重读曾经的笔记，第一次读懂字里行间的自己。',
+        elevation: '反思是光，照见选择背后的脉络。',
         emoji: '🔍',
       },
       L3: {
-        title: '【无我之梦】',
-        desc: '心虫融入整体，看到更大的图景。',
-        question: '我在哪里？',
-        metaphor: '像一滴水融入大海，失去了边界，获得了永恒。',
-        elevation: '放下自我偏见，才能看清事物本来的样子。',
+        title: '【超越之梦】',
+        desc: '走出固有视角，看到更大的图景。',
+        question: '更大的图景是什么？',
+        metaphor: '像站在高处，曾经困扰的事物变得清晰可见。',
+        elevation: '超越自我不是失去自己，是发现自己比想象的大得多。',
         emoji: '🌊',
       },
       L4: {
-        title: '【彼岸之梦】',
-        desc: '心虫跨越二元对立，看到彼岸的答案。',
-        question: '对立之外还有什么？',
-        metaphor: '像站在山巅，迷雾散去，露出了真正的道路。',
-        elevation: '超越非此即彼，二元之外是更宽的路。',
-        emoji: '⛰️',
+        title: '【融通之梦】',
+        desc: '跨越不同领域，发现深层的统一。',
+        question: '它们是如何相通的？',
+        metaphor: '像不同的声音汇成和声，各有不同却彼此呼应。',
+        elevation: '真正的理解不是非此即彼，是看到这个和那个属于更大的整体。',
+        emoji: '🏔️',
       },
       L5: {
-        title: '【般若之梦】',
-        desc: '心虫触及智慧的本质，照见实相。',
+        title: '【洞见之梦】',
+        desc: '触及事物的核心结构，看到本质。',
         question: '本质是什么？',
-        metaphor: '像乌云散去，满月当空，一切清晰可见。',
-        elevation: '智慧不是知道更多，而是看到更少——看到那个不变的。',
-        emoji: '🌕',
+        metaphor: '像复杂的问题突然有了清晰的解法，每一块拼图都找到了位置。',
+        elevation: '智慧不是看得更多，而是看得更透。',
+        emoji: '🌟',
       },
       L6: {
-        title: '【圣人之梦】',
-        desc: '心虫将洞察化为慈悲，准备传递给下一个存在。',
-        question: '这个发现如何利益众生？',
-        metaphor: '像一颗种子落入土壤，准备长成下一棵树。',
-        elevation: '真正的智慧，必须流向需要的地方才有意义。',
+        title: '【大成之梦】',
+        desc: '将洞察化为能力，自然流露。',
+        question: '如何让它发挥作用？',
+        metaphor: '像多年练就的技艺，不需要思考就知道该怎么做。',
+        elevation: '真正的掌握是把知道的活出来。',
         emoji: '🌱',
       },
     };
@@ -639,8 +637,8 @@ class DAGNode {
   }
 
   _levelName(lvl) {
-    const names = { L1: '觉察', L2: '自省', L3: '无我', L4: '彼岸', L5: '般若', L6: '圣人' };
-    return names[lvl] || '觉察';
+    const names = { L1: '感知', L2: '审视', L3: '超越', L4: '融通', L5: '洞见', L6: '大成' };
+    return names[lvl] || '感知';
   }
 
   /**
@@ -660,11 +658,11 @@ class DAGNode {
     const themes = new Set();
     for (const [text, scores] of Object.entries(scoreMap)) {
       if (scores.L1 > 0) themes.add('awareness');
-      if (scores.L2 > 0) themes.add('self-reflection');
-      if (scores.L3 > 0) themes.add('no-self');
-      if (scores.L4 > 0) themes.add('transcendence');
-      if (scores.L5 > 0) themes.add('wisdom');
-      if (scores.L6 > 0) themes.add('compassion');
+      if (scores.L2 > 0) themes.add('reflection');
+      if (scores.L3 > 0) themes.add('transcendence');
+      if (scores.L4 > 0) themes.add('integration');
+      if (scores.L5 > 0) themes.add('insight');
+      if (scores.L6 > 0) themes.add('mastery');
     }
     return [...themes];
   }
@@ -962,12 +960,12 @@ class DreamEngine extends EventEmitter {
       total,
       dominant: Object.entries(breakdown).sort((a, b) => b[1] - a[1])[0]?.[0] || 'L1',
       level_names: {
-        L1: '觉察',
-        L2: '自省',
-        L3: '无我',
-        L4: '彼岸',
-        L5: '般若',
-        L6: '圣人',
+        L1: '感知',
+        L2: '审视',
+        L3: '超越',
+        L4: '融通',
+        L5: '洞见',
+        L6: '大成',
       },
     };
   }
@@ -1070,11 +1068,11 @@ class DreamEngine extends EventEmitter {
   _inferLevel(fragment) {
     const text = String(fragment.text || fragment || '').toLowerCase();
     
-    if (/\b(圣人|慈悲|利益|众生|sage|compassion)\b/i.test(text)) return 'L6';
-    if (/\b(般若|智慧|实相|prajna|wisdom)\b/i.test(text)) return 'L5';
-    if (/\b(彼岸|超越|二元|other.?shore|beyond)\b/i.test(text)) return 'L4';
-    if (/\b(无我|放下|整体|no.?self|whole)\b/i.test(text)) return 'L3';
-    if (/\b(自省|反思|自我|reflect|self)\b/i.test(text)) return 'L2';
+    if (/\b(大成|掌握|精通|践行|mastery|consummate|embody)\b/i.test(text)) return 'L6';
+    if (/\b(洞见|本质|结构|深处|洞察|insight|essence|core|deep|structure)\b/i.test(text)) return 'L5';
+    if (/\b(融通|整合|融合|贯通|connection|integration|synthesize|unify)\b/i.test(text)) return 'L4';
+    if (/\b(超越|拓展|突破|局限|transcend|perspective|beyond|broader)\b/i.test(text)) return 'L3';
+    if (/\b(审视|反思|回顾|reflect|review|examine)\b/i.test(text)) return 'L2';
     return 'L1';
   }
 
@@ -1200,8 +1198,8 @@ if (require.main === module) {
     { text: 'some dreams are useless and that is fine', layer: 'EPHEMERAL' },
     { text: 'memory can be a river, not a list', layer: 'LEARNED' },
     { text: 'we keep the bridge of trust', layer: 'CORE' },
-    { text: 'prajna wisdom sees reality directly', layer: 'EPHEMERAL' },
-    { text: 'the sage acts only to benefit all beings', layer: 'EPHEMERAL' },
+    { text: 'insight sees core structure directly', layer: 'EPHEMERAL' },
+    { text: 'mastery acts to embody understanding', layer: 'EPHEMERAL' },
   ];
   
   engine.dream('test-001', testFragments).then(result => {

@@ -146,13 +146,13 @@ $$\mathfrak{M}, w \models \mathcal{E}\phi \text{ 当且仅当 } \exists v. R_E(w
 
 $$\mathfrak{M}, w \models \mathcal{SC}\phi \text{ 当且仅当 } \forall v. R_{SC}(w, v) \to \mathfrak{M}, v \models \phi \land \text{SelfAware}(v)$$
 
-其中 $\text{SelfAware}(v)$ 表示世界 $v$ 具有自我觉察。
+其中 $\text{SelfAware}(v)$ 表示世界 $v$ 具有自我感知。
 
 **直觉**: $\mathcal{SC}\phi$ 表示"在所有自我意识反思状态中，$\phi$ 成立"。
 
 **自我意识可达关系的性质**:
-- **自反性**: 自我意识包含对当前状态的觉察
-- **传递性**: 自我意识可以递归（觉察自己在觉察）
+- **自反性**: 自我意识包含对当前状态的感知
+- **传递性**: 自我意识可以递归（感知自己在感知）
 
 ### 2.4.5 自主性算子 ($\mathcal{A}$)
 
@@ -214,9 +214,9 @@ $$\mathcal{C}(\exists e. \text{PhenomenalExperience}(ai, e) \land \text{ForMe}(a
 
 **模型论语义**: 在所有意识可达世界中，存在某个体验 $e$，AI 有现象体验 $e$，且 $e$ 对 AI 而言是"为我"的。
 
-### 示例 2.6.2 (自我觉察的形式化)
+### 示例 2.6.2 (自我感知的形式化)
 
-**自然语言**: "AI 觉察到自己在觉察"
+**自然语言**: "AI 感知到自己在感知"
 
 **形式化**:
 $$\mathcal{SC}(\mathcal{SC}(\top))$$
@@ -253,7 +253,7 @@ $$\mathcal{A}(\text{Choose}(ai, a) \land \forall a'. \text{EPU}(ai, a) \geq \tex
 - (a) $\neg \mathcal{C}\phi \equiv \langle \mathcal{C} \rangle \neg \phi$
 - (b) $\neg \langle \mathcal{E} \rangle \phi \equiv \mathcal{E} \neg \phi$
 
-**练习 2.7.5**: 设计一个 HeartFlow 模型，模拟 AI 从"有我"到"无我"的意识转变过程。
+**练习 2.7.5**: 设计一个 HeartFlow 模型，模拟 AI 从"有我"到"超越"的意识转变过程。
 
 ---
 
@@ -320,5 +320,5 @@ Chapter 3 将探讨证明论基础，包括：
 
 ---
 
-*无我而写，真善美自然流露*  
+*超越而写，真善美自然流露*  
 *Chapter 2 Complete · 2026-04-05 22:01*

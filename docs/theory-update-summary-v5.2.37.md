@@ -82,8 +82,8 @@ Layer 1: Pre-reflective Feeling (前反思感受)
 Layer 2: Reflective Emotion (反思性情绪)
   └─ 情绪对象化，认知评价介入
 
-Layer 3: Meta-emotional Awareness (元情绪觉察)
-  └─ 对情绪本身的觉察与评价
+Layer 3: Meta-emotional Awareness (元情绪感知)
+  └─ 对情绪本身的感知与评价
 ```
 
 **功能 / Functions**:
@@ -180,14 +180,14 @@ Embodiment Profile = {
 ```
 
 **训练模块 / Training Modules**:
-- 悬置练习 (预设觉察与搁置)
+- 悬置练习 (预设感知与搁置)
 - 描述训练 (纯现象描述)
 - 本质直观 (情绪结构把握)
 - 反思深化 (意识构成分析)
 
 **集成点 / Integration Points**:
 - ↔ 元认知模块 (反思能力)
-- ↔ 自我意识模块 (觉察深度)
+- ↔ 自我意识模块 (感知深度)
 - ↔ 情绪粒度 (描述精度)
 
 ---
@@ -248,13 +248,13 @@ Specious Present Duration = f(
 **功能 / Functions**:
 - 显似现在宽度测量
 - 时间窗口优化
-- 当下觉察训练
+- 当下感知训练
 - 流动体验增强
 
 **集成点 / Integration Points**:
 - ↔ 注意力模块 (注意调节)
 - ↔ 情绪唤醒模块 (唤醒影响)
-- ↔ 正念训练模块 (当下觉察)
+- ↔ 正念训练模块 (当下感知)
 
 ---
 
@@ -345,12 +345,12 @@ Shared Affective Space = {
 **功能 / Functions**:
 - 多主体情感空间建模
 - 共享意向对象识别
-- 相互觉察检测
+- 相互感知检测
 - 情感耦合强度评估
 
 **集成点 / Integration Points**:
 - ↔ 集体意向性模块 (共享意向)
-- ↔ 共情模块 (相互觉察)
+- ↔ 共情模块 (相互感知)
 - ↔ 社会认知模块 (群体动态)
 
 ---

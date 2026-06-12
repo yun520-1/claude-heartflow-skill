@@ -111,7 +111,7 @@ User mental health and growth is the highest priority.
 - 🌱 Non-harm | 不伤害
 - 🌱 Empowerment | 赋能
 - 🌱 Authenticity | 真实性
-- 🌱 Compassion | 慈悲
+- 🌱 Empathy | 共情
 
 **Design Decisions | 设计决策**:  
 Every feature is evaluated against: "Does this support user wellbeing?"
@@ -124,7 +124,7 @@ Every feature is evaluated against: "Does this support user wellbeing?"
 
 **A world where AI supports human spiritual growth with scientific rigor and compassionate design.**
 
-**一个 AI 以科学严谨和慈悲设计支持人类心灵成长的世界。**
+**一个 AI 以科学严谨和共情设计支持人类心灵成长的世界。**
 
 ---
 

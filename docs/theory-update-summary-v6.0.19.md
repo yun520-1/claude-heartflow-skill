@@ -444,12 +444,12 @@ MoralMotivation = {
 
 **情绪意识层级 / Levels of Emotional Awareness**:
 ```
-Level 0: 无情绪意识 (情绪存在但未被觉察)
-Level 1: 身体感受觉察 ("我感到紧张")
-Level 2: 情绪标签觉察 ("我感到焦虑")
+Level 0: 无情绪意识 (情绪存在但未被感知)
+Level 1: 身体感受感知 ("我感到紧张")
+Level 2: 情绪标签感知 ("我感到焦虑")
 Level 3: 情绪 - 情境整合 ("因为演讲，我感到焦虑")
-Level 4: 情绪模式觉察 ("我在压力情境下容易焦虑")
-Level 5: 元情绪觉察 ("我焦虑于自己的焦虑")
+Level 4: 情绪模式感知 ("我在压力情境下容易焦虑")
+Level 5: 元情绪感知 ("我焦虑于自己的焦虑")
 ```
 
 **功能 / Functions**:
@@ -562,13 +562,13 @@ EmotionSelfModel = {
 **耦合模式 / Coupling Patterns**:
 ```
 Pattern 1: 情绪增强意识 (Emotion-Enhanced Consciousness)
-  - 情绪刺激优先觉察
+  - 情绪刺激优先感知
   - 情绪事件记忆增强
   - 情绪显著性驱动注意
 
 Pattern 2: 意识调节情绪 (Consciousness-Regulated Emotion)
   - 注意重评调节情绪强度
-  - 意识觉察促进情绪调节
+  - 意识感知促进情绪调节
   - 元认知监控情绪状态
 
 Pattern 3: 情绪 - 意识解离 (Emotion-Consciousness Dissociation)
@@ -670,7 +670,7 @@ Pattern 3: 情绪 - 意识解离 (Emotion-Consciousness Dissociation)
 
 1. **意识状态识别准确率**: 92% → 97%
 2. **道德困境分析深度**: 中等 → 深度
-3. **情绪觉察引导精度**: 78% → 91%
+3. **情绪感知引导精度**: 78% → 91%
 4. **个性化干预匹配度**: 81% → 94%
 
 ---

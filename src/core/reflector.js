@@ -256,9 +256,9 @@ class Reflector {
     if (personality.introspection && personality.introspection < 6) {
       improvements.push({
         priority: '中',
-        area: '自省能力',
+        area: '反思能力',
         suggestion: '建议增加反思性对话频率，帮助用户深化自我认知',
-        reason: '自省分数偏低'
+        reason: '反思分数偏低'
       });
     }
 
